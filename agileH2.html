@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -187,3 +188,194 @@
     </script>
 </body>
 </html>
+=======
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Proyectos</title>
+    <style>
+        /* Estilos generales */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f3f3f3;
+        }
+
+        /* Menú superior */
+        .header {
+            background-color: #6a0d83; /* Color de la paleta */
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-size: 24px;
+            position: fixed;
+            width: 100%;
+            top: 0;
+        }
+
+        /* Menú lateral */
+        .sidebar {
+            width: 220px;
+            background-color: white;
+            position: fixed;
+            top: 60px; /* Ajuste para que no cubra el header */
+            left: 0;
+            height: 100%;
+            padding-top: 20px;
+            border-right: 2px solid #ce4993; /* Borde lateral */
+        }
+
+        .sidebar a {
+            padding: 15px;
+            text-decoration: none;
+            font-size: 18px;
+            color: white;
+            display: block;
+            margin-bottom: 10px;
+            border: 1px solid #ce4993; /* Borde alrededor de las opciones */
+            border-radius: 5px;
+            background-color: #fb9062; /* Color naranja por defecto */
+        }
+
+        .sidebar a.active {
+            background-color: #fb9062; /* Color naranja cuando está activa */
+            color: white;
+        }
+
+        /* Contenido principal */
+        .content {
+            margin-left: 240px;
+            padding: 20px;
+            padding-top: 80px; /* Ajuste para que el contenido no esté debajo del header */
+        }
+
+        /* Footer */
+        .footer {
+            background-color: #6a0d83;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+
+        /* Estilos para el formulario */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .btn-assign {
+            background-color: #6a0d83;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .btn-assign:hover {
+            background-color: #ce4993;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Menú superior -->
+    <div class="header">
+        Gestión de Proyectos
+    </div>
+
+    <!-- Menú lateral -->
+    <div class="sidebar">
+        <a href="#" class="active" onclick="setActive(this)">Proyecto</a>
+        <a href="#" onclick="setActive(this)">Completar</a>
+        <a href="#" onclick="setActive(this)">Miembros</a>
+        <a href="#" onclick="setActive(this)">Asignar</a>
+    </div>
+
+    <!-- Contenido principal -->
+    <div class="content">
+        <h2>Asignar Tareas a los Miembros del Equipo</h2>
+        <form>
+            <div class="form-group">
+                <label for="miembro">Selecciona un miembro del equipo:</label>
+                <select id="miembro">
+                    <option>Miembro 1</option>
+                    <option>Miembro 2</option>
+                    <option>Miembro 3</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="proyecto">Selecciona un proyecto:</label>
+                <select id="proyecto">
+                    <option>Proyecto 1</option>
+                    <option>Proyecto 2</option>
+                    <option>Proyecto 3</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="tarea">Selecciona la tarea a asignar:</label>
+                <input type="text" id="tarea" placeholder="Descripción de la tarea">
+            </div>
+            <div class="form-group">
+                <label for="fecha">Fecha de entrega:</label>
+                <input type="date" id="fecha">
+            </div>
+            <button type="button" class="btn-assign" onclick="asignarTarea()">Asignar Tarea</button>
+        </form>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        &copy; 2024 Gestión de Proyectos
+    </div>
+
+    <script>
+        // Función para asignar tarea
+        function asignarTarea() {
+            var miembro = document.getElementById('miembro').value;
+            var proyecto = document.getElementById('proyecto').value;
+            var tarea = document.getElementById('tarea').value;
+            var fecha = document.getElementById('fecha').value;
+
+            if (miembro && proyecto && tarea && fecha) {
+                alert('Tarea asignada: \n' + 
+                      'Miembro: ' + miembro + '\n' + 
+                      'Proyecto: ' + proyecto + '\n' + 
+                      'Tarea: ' + tarea + '\n' + 
+                      'Fecha de entrega: ' + fecha);
+            } else {
+                alert('Por favor, completa todos los campos antes de asignar la tarea.');
+            }
+        }
+
+        // Función para establecer la opción activa
+        function setActive(element) {
+            // Remover la clase active de todos los enlaces
+            var links = document.querySelectorAll('.sidebar a');
+            links.forEach(link => link.classList.remove('active'));
+            
+            // Agregar la clase active al enlace seleccionado
+            element.classList.add('active');
+        }
+    </script>
+</body>
+</html>
+>>>>>>> Stashed changes
