@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tareas Asignadas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h2 {
+            color: #6a0d83;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #6a0d83;
+            color: white;
+        }
+
+        .task-status {
+            width: 100%;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Tareas Asignadas</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Miembro</th>
+                <th>Proyecto</th>
+                <th>Tarea</th>
+                <th>Fecha de Entrega</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody id="task-table-body">
+        </tbody>
+    </table>
+</body>
+</html>
