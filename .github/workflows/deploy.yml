@@ -22,11 +22,11 @@ jobs:
       run: |
         rsync -avz -e "ssh -o StrictHostKeyChecking=no" \
         --exclude=".git" \
-        ./ root@web.trabanino.xyz:/home/metodologias.trabanino.xyz/public_html/
+        ./ ubuntu@web.trabanino.xyz:/home/metodologias.trabanino.xyz/public_html/
 
     - name: Install dependencies on the server
       run: |
-        ssh root@web.trabanino.xyz << 'EOF'
+        ssh ubuntu@web.trabanino.xyz << 'EOF'
         cd /home/metodologias.trabanino.xyz/public_html/
         npm install
         pm2 restart server.js  # Restart the Node.js app
