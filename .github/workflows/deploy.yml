@@ -22,7 +22,7 @@ jobs:
       run: |
         rsync -avz -e "ssh -o StrictHostKeyChecking=no" \
         --exclude=".git" \
-        ./ root@yweb.trabanino.xyz:/home/metodologias.trabanino.xyz/public_html/
+        ./ root@web.trabanino.xyz:/home/metodologias.trabanino.xyz/public_html/
 
     - name: Install dependencies on the server
       run: |
