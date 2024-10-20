@@ -26,8 +26,7 @@ loginForm.addEventListener('submit', async (e) => {
 
         if (response.ok) {
             localStorage.setItem('token', resultado.token);
-
-            window.location.href = 'proyectos.html';
+            window.location.href = 'proyectos';
         } else {
             mensajeDiv.textContent = resultado.mensaje;
             mensajeDiv.style.color = 'red';

@@ -30,7 +30,7 @@ registerForm.addEventListener('submit', async (e) => {
             mensajeDiv.style.color = 'green';
 
             setTimeout(() => {
-                window.location.href = 'login.html';
+                window.location.href = 'login';
             }, 2000);
         } else {
             mensajeDiv.textContent = resultado.mensaje;
