@@ -8,6 +8,7 @@ const jwt = require('jsonwebtoken');
 
 
 const PORT = process.env.PORT || 3001;
+
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
@@ -117,10 +118,6 @@ async function main() {
             const projectId = req.params.id;
             const result = await projectsCollection.deleteOne({ _id: new ObjectId(projectId) });
             res.send(result);
-        });
-
-        app.listen(PORT, () => {
-            console.log(`Servidor en puerto ${PORT}`);
         });
 
     } catch (err) {
