@@ -119,8 +119,8 @@ async function main() {
             res.send(result);
         });
 
-        app.listen(port, () => {
-            console.log(`Servidor en puerto ${port}`);
+        app.listen(PORT, () => {
+            console.log(`Servidor en puerto ${PORT}`);
         });
 
     } catch (err) {
