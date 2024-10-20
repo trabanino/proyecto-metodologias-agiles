@@ -1,4 +1,4 @@
-name: Deploy to web
+name: Deploy
 
 on:
   push:
@@ -10,24 +10,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Set up SSH
-      uses: webfactory/ssh-agent@v0.9.0
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    - name: Sync project files via SFTP
-      run: |
-        rsync -avz -e "ssh -o StrictHostKeyChecking=no" \
-        --exclude=".git" \
-        ./ ubuntu@web.trabanino.xyz:/home/metodologias.trabanino.xyz/public_html/
+      - name: Sync project files via SFTP
+        run: |
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no" \
+          --exclude=".git" \
+          ./ ubuntu@web.trabanino.xyz:/home/metodologias.trabanino.xyz/public_html/
 
-    - name: Install dependencies on the server
-      run: |
-        ssh ubuntu@web.trabanino.xyz << 'EOF'
-        cd /home/metodologias.trabanino.xyz/public_html/
-        npm install
-        pm2 restart server.js  # Restart the Node.js app
-        EOF
+      - name: Install dependencies and start server
+        run: |
+          ssh ubuntu@web.trabanino.xyz << 'EOF'
+          cd /home/metodologias.trabanino.xyz/public_html/
+          npm install
+          sudo npm install -g pm2 
+          pm2 start server.js --name my-app || pm2 restart my-app
+          EOF
