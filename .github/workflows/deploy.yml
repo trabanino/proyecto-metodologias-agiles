@@ -20,7 +20,7 @@ jobs:
 
       - name: Sync project files via SFTP
         run: |
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no" \
+          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" \
           --exclude=".git" \
           ./ ubuntu@web.trabanino.xyz:/home/metodologias.trabanino.xyz/public_html/
 
@@ -29,6 +29,6 @@ jobs:
           ssh ubuntu@web.trabanino.xyz << 'EOF'
           cd /home/metodologias.trabanino.xyz/public_html/
           npm install
-          sudo npm install -g pm2 
+          sudo npm install -g pm2
           pm2 start server.js --name my-app || pm2 restart my-app
           EOF
