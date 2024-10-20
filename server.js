@@ -30,25 +30,34 @@ async function main() {
         const projectsCollection = db.collection('proyectos');
         const tasksCollection = db.collection('tareas');
 
-        // sirve la pagina principal cuando se accede a la raiz
+        // sirve la pagina principal
         app.get('/', (req, res) => {
             res.sendFile(path.join(__dirname, 'public', 'index.html'));
         });
 
-        app.get('/home', (req, res) => {
-            res.sendFile(path.join(__dirname, 'public', 'index.html'));
+        // sirve el dashboard
+        app.get('/dashboard', (req, res) => {
+            res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
         });
 
+        // sirve la pagina de login
         app.get('/login', (req, res) => {
             res.sendFile(path.join(__dirname, 'public', 'login.html'));
         });
 
+        // sirve la pagina de registro
         app.get('/register', (req, res) => {
-            res.sendFile(path.join(__dirname, 'public', 'register.html'))
+            res.sendFile(path.join(__dirname, 'public', 'register.html'));
         });
 
+        // sirve la pagina de proyectos
         app.get('/proyectos', (req, res) => {
             res.sendFile(path.join(__dirname, 'public', 'proyectos.html'));
+        });
+
+        // sirve la vista del proyecto sin mostrar .html en la url
+        app.get('/proyecto/:id', (req, res) => {
+            res.sendFile(path.join(__dirname, 'public', 'project_view.html'));
         });
 
         // registrar un nuevo usuario
@@ -94,27 +103,40 @@ async function main() {
             }
         }
 
+        // obtener proyectos del usuario
         app.get('/api/projects', verificarToken, async (req, res) => {
-            const projects = await projectsCollection.find({}).toArray();
+            const userId = req.usuario.id;
+            const projects = await projectsCollection.find({ miembros: userId }).toArray();
             res.send(projects);
         });
 
-        // obtener un proyecto por id
-        app.get('/api/projects/:id', async (req, res) => {
+        // obtener un proyecto por id si el usuario es miembro
+        app.get('/api/projects/:id', verificarToken, async (req, res) => {
             const projectId = req.params.id;
-            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
+            const userId = req.usuario.id;
+            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId), miembros: userId });
+            if (!project) {
+                return res.status(403).json({ mensaje: 'No tienes acceso a este proyecto' });
+            }
             res.send(project);
         });
 
-        // crear nuevo proyecto
-        app.post('/api/projects', async (req, res) => {
-            const result = await projectsCollection.insertOne(req.body);
+        // crear nuevo proyecto y asignarlo al usuario
+        app.post('/api/projects', verificarToken, async (req, res) => {
+            const userId = req.usuario.id;
+            const nuevoProyecto = { ...req.body, owner: userId, miembros: [userId] };
+            const result = await projectsCollection.insertOne(nuevoProyecto);
             res.send(result);
         });
 
-        // eliminar proyecto
-        app.delete('/api/projects/:id', async (req, res) => {
+        // eliminar proyecto si es el owner
+        app.delete('/api/projects/:id', verificarToken, async (req, res) => {
             const projectId = req.params.id;
+            const userId = req.usuario.id;
+            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
+            if (project.owner.toString() !== userId) {
+                return res.status(403).json({ mensaje: 'No tienes permiso para eliminar este proyecto' });
+            }
             const result = await projectsCollection.deleteOne({ _id: new ObjectId(projectId) });
             res.send(result);
         });

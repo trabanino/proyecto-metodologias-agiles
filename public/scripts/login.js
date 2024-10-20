@@ -21,12 +21,11 @@ loginForm.addEventListener('submit', async (e) => {
             body: JSON.stringify(datos)
         });
 
-
         const resultado = await response.json();
 
         if (response.ok) {
             localStorage.setItem('token', resultado.token);
-            window.location.href = 'proyectos';
+            window.location.href = '/dashboard';
         } else {
             mensajeDiv.textContent = resultado.mensaje;
             mensajeDiv.style.color = 'red';

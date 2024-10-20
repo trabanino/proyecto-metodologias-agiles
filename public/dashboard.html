@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard - Gestión de Proyectos</title>
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+<header>
+  <h1>Gestion de Proyectos</h1>
+  <button id="logoutBtn">Cerrar Sesion</button>
+</header>
+<main>
+  <section class="project-selection">
+    <h2>Selecciona un Proyecto</h2>
+    <div class="project-list" id="projectList">
+
+    </div>
+    <button id="createProjectBtn">Crear Nuevo Proyecto</button>
+  </section>
+</main>
+
+<div class="modal" id="projectModal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>Crear Nuevo Proyecto</h2>
+    <form id="projectForm">
+      <label for="projectName">Nombre del Proyecto</label>
+      <input type="text" id="projectName" required>
+      <label for="projectDescription">Descripción</label>
+      <textarea id="projectDescription" required></textarea>
+      <button type="submit">Crear Proyecto</button>
+    </form>
+  </div>
+</div>
+
+<script src="scripts/"></script>
+</body>
+</html>

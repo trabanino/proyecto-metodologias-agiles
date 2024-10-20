@@ -33,9 +33,6 @@ async function loadProjects() {
             'Authorization': token
         }
     });
-
-async function loadProjects() {
-    const response = await fetch('/api/projects');
     const projects = await response.json();
 
     projectGrid.innerHTML = '';
@@ -49,7 +46,7 @@ async function loadProjects() {
             <p>${project.descripcion}</p>
         `;
         projectCard.addEventListener('click', () => {
-            showProjectDetails(project._id);
+            window.location.href = `/proyecto/${project._id}`;
         });
         projectGrid.appendChild(projectCard);
     });
@@ -68,7 +65,8 @@ projectForm.addEventListener('submit', async (event) => {
     await fetch('/api/projects', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': token
         },
         body: JSON.stringify(newProject)
     });
@@ -78,7 +76,11 @@ projectForm.addEventListener('submit', async (event) => {
 });
 
 async function showProjectDetails(projectId) {
-    const response = await fetch(`/api/projects/${projectId}`);
+    const response = await fetch(`/api/projects/${projectId}`, {
+        headers: {
+            'Authorization': token
+        }
+    });
     const project = await response.json();
 
     if (project) {
@@ -91,10 +93,19 @@ async function showProjectDetails(projectId) {
 
 deleteButton.addEventListener('click', async () => {
     await fetch(`/api/projects/${currentProjectId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+            'Authorization': token
+        }
     });
     detailModal.style.display = 'none';
     loadProjects();
 });
 
-document.addEventListener('DOMContentLoaded', loadProjects);}
+document.addEventListener('DOMContentLoaded', () => {
+    if (!token) {
+        window.location.href = '/login';
+    } else {
+        loadProjects();
+    }
+});
