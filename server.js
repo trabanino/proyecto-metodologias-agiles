@@ -35,6 +35,10 @@ async function main() {
             res.sendFile(path.join(__dirname, 'public', 'index.html'));
         });
 
+        app.get('/home', (req, res) => {
+            res.sendFile(path.join(__dirname, 'public', 'index.html'));
+        });
+
         // sirve el dashboard
         app.get('/dashboard', (req, res) => {
             res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
