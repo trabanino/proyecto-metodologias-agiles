@@ -56,7 +56,7 @@ async function main() {
 
         // sirve la pagina de proyectos
         app.get('/proyectos', (req, res) => {
-            res.sendFile(path.join(__dirname, 'public', 'proyectos.html'));
+            res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
         });
 
         // sirve la vista del proyecto sin mostrar .html en la url
