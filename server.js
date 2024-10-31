@@ -54,12 +54,7 @@ async function main() {
             res.sendFile(path.join(__dirname, 'public', 'register.html'));
         });
 
-        // sirve la pagina de proyectos
-        app.get('/proyectos', (req, res) => {
-            res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
-        });
-
-        // sirve la vista del proyecto sin mostrar .html en la url
+        // sirve la vista del proyecto
         app.get('/proyecto/:id', (req, res) => {
             res.sendFile(path.join(__dirname, 'public', 'project_view.html'));
         });
@@ -88,7 +83,7 @@ async function main() {
             if (!esContraseñaValida) {
                 return res.status(400).json({ mensaje: 'Correo o contraseña incorrectos' });
             }
-            const token = jwt.sign({ id: usuario._id, rol: usuario.rol }, jwtSecret, { expiresIn: '1h' });
+            const token = jwt.sign({ id: usuario._id.toString(), rol: usuario.rol }, jwtSecret, { expiresIn: '1h' });
             res.json({ mensaje: 'Inicio de sesion exitoso', token });
         });
 
@@ -107,6 +102,11 @@ async function main() {
             }
         }
 
+        // generar codigo de proyecto
+        function generateProjectCode() {
+            return Math.random().toString(36).substr(2, 8);
+        }
+
         // obtener proyectos del usuario
         app.get('/api/projects', verificarToken, async (req, res) => {
             const userId = req.usuario.id;
@@ -114,23 +114,53 @@ async function main() {
             res.send(projects);
         });
 
-        // obtener un proyecto por id si el usuario es miembro
-        app.get('/api/projects/:id', verificarToken, async (req, res) => {
-            const projectId = req.params.id;
-            const userId = req.usuario.id;
-            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId), miembros: userId });
-            if (!project) {
-                return res.status(403).json({ mensaje: 'No tienes acceso a este proyecto' });
-            }
-            res.send(project);
-        });
-
-        // crear nuevo proyecto y asignarlo al usuario
         app.post('/api/projects', verificarToken, async (req, res) => {
             const userId = req.usuario.id;
-            const nuevoProyecto = { ...req.body, owner: userId, miembros: [userId] };
+            const { nombre, descripcion, miembrosInvitados } = req.body;
+            const miembros = [userId];
+
+            // buscar los usuarios por correo y agregar sus IDs a miembros
+            if (miembrosInvitados && miembrosInvitados.length > 0) {
+                const usuariosInvitados = await usersCollection.find({ correo: { $in: miembrosInvitados } }).toArray();
+                const invitadosIds = usuariosInvitados.map(usuario => usuario._id.toString());
+                miembros.push(...invitadosIds);
+            }
+
+            const nuevoProyecto = {
+                nombre,
+                descripcion,
+                owner: userId,
+                miembros,
+                codigo: generateProjectCode()
+            };
+
             const result = await projectsCollection.insertOne(nuevoProyecto);
-            res.send(result);
+            // obtener el proyecto insertado usando insertedId
+            const insertedProject = await projectsCollection.findOne({ _id: result.insertedId });
+            res.send(insertedProject); // devolver el proyecto creado
+        });
+
+        // unirse a un proyecto por codigo
+        app.post('/api/projects/join', verificarToken, async (req, res) => {
+            const userId = req.usuario.id;
+            const { projectCode } = req.body;
+
+            const project = await projectsCollection.findOne({ codigo: projectCode });
+
+            if (!project) {
+                return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
+            }
+
+            if (project.miembros.includes(userId)) {
+                return res.status(400).json({ mensaje: 'Ya eres miembro de este proyecto' });
+            }
+
+            await projectsCollection.updateOne(
+                { _id: project._id },
+                { $push: { miembros: userId } }
+            );
+
+            res.json({ mensaje: 'Te has unido al proyecto' });
         });
 
         // eliminar proyecto si es el owner
