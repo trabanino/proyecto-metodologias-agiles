@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Detalles del Proyecto</title>
+  <link rel="stylesheet" href="css/project.css">
+</head>
+<body>
+<header>
+  <h1 id="projectTitle">Nombre del Proyecto</h1>
+  <button onclick="goBack()">Volver</button>
+</header>
+<main>
+  <!-- Eliminamos la sección de acciones que contenía los botones de "Fijar Objetivos" y "Crear Sprint" -->
+  
+  <section class="board">
+    <div class="column">
+      <h2>Tareas Pendientes</h2>
+      <div class="task-list" id="todoList">
+        <!-- Tareas pendientes aquí -->
+      </div>
+      <button onclick="addTask('todo')">Crear un Sprint</button>
+      <button onclick="openObjectivesModal('todo')">Añadir Objetivo</button>
+    </div>
+    <div class="column">
+      <h2>Tareas en Progreso</h2>
+      <div class="task-list" id="inProgressList">
+        <!-- Tareas en progreso aquí -->
+      </div>
+      <button onclick="addTask('inProgress')">Crear un Sprint</button>
+      <button onclick="openObjectivesModal('inProgress')">Añadir Objetivo</button>
+    </div>
+    <div class="column">
+      <h2>Tareas Terminadas</h2>
+      <div class="task-list" id="doneList">
+        <!-- Tareas terminadas aquí -->
+      </div>
+      <button onclick="addTask('done')">Crear un Sprint</button>
+      <button onclick="openObjectivesModal('done')">Añadir Objetivo</button>
+    </div>
+  </section>
+</main>
+
+<!-- Modal para Fijar Objetivos -->
+<div class="modal" id="objectivesModal">
+  <div class="modal-content">
+    <span class="close" onclick="closeObjectivesModal()">&times;</span>
+    <h2>Fijar Objetivos</h2>
+    <form id="objectivesForm" onsubmit="saveObjective(event)">
+      <input type="hidden" id="objectiveColumn">
+      <label for="objectiveTitle">Título del Objetivo</label>
+      <input type="text" id="objectiveTitle" required>
+      <label for="objectiveDescription">Descripción del Objetivo</label>
+      <textarea id="objectiveDescription" required></textarea>
+      <button type="submit">Guardar Objetivo</button>
+    </form>
+  </div>
+</div>
+
+<script src="scripts/project.js"></script>
+<script>
+  function openObjectivesModal(columnId) {
+    document.getElementById("objectivesModal").style.display = "flex";
+    document.getElementById("objectiveColumn").value = columnId;
+  }
+
+  function closeObjectivesModal() {
+    document.getElementById("objectivesModal").style.display = "none";
+  }
+
+  function redirectToSprint() {
+    window.location.href = "sprint.html";
+  }
+</script>
+</body>
+</html>

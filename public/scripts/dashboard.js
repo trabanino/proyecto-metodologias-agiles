@@ -1,73 +1,71 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        window.location.href = '/login';
-    }
+// Variables globales
+let projects = JSON.parse(localStorage.getItem("projects")) || [];
 
-    const projectList = document.getElementById('projectList');
-    const createProjectBtn = document.getElementById('createProjectBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const projectModal = document.getElementById('projectModal');
-    const closeModal = document.querySelector('.close');
-    const projectForm = document.getElementById('projectForm');
-
-    // cargar proyectos del usuario
-    async function loadProjects() {
-        const response = await fetch('/api/projects', {
-            headers: {
-                'Authorization': token
-            }
-        });
-        const projects = await response.json();
-
-        projectList.innerHTML = '';
-
-        projects.forEach(project => {
-            const projectCard = document.createElement('div');
-            projectCard.classList.add('project-card');
-            projectCard.textContent = project.nombre;
-            projectCard.addEventListener('click', () => {
-                window.location.href = `/proyecto/${project._id}`;
-            });
-            projectList.appendChild(projectCard);
-        });
-    }
-
-    createProjectBtn.addEventListener('click', () => {
-        projectModal.style.display = 'flex';
-    });
-
-    closeModal.addEventListener('click', () => {
-        projectModal.style.display = 'none';
-    });
-
-    projectForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const nombre = document.getElementById('projectName').value;
-        const descripcion = document.getElementById('projectDescription').value;
-
-        const nuevoProyecto = {
-            nombre,
-            descripcion
-        };
-
-        await fetch('/api/projects', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': token
-            },
-            body: JSON.stringify(nuevoProyecto)
-        });
-
-        projectModal.style.display = 'none';
-        loadProjects();
-    });
-
-    logoutBtn.addEventListener('click', () => {
-        localStorage.removeItem('token');
-        window.location.href = '/login';
-    });
-
-    loadProjects();
+// Función para abrir y cerrar el modal de creación de proyectos
+document.getElementById("createProjectBtn").addEventListener("click", function () {
+    document.getElementById("projectModal").style.display = "flex";
 });
+
+document.querySelectorAll(".close").forEach(closeBtn => {
+    closeBtn.addEventListener("click", function () {
+        document.getElementById("projectModal").style.display = "none";
+    });
+});
+
+// Función para agregar proyectos a la lista y a localStorage
+document.getElementById("projectForm").addEventListener("submit", function (event) {
+    event.preventDefault();
+
+    const projectName = document.getElementById("projectName").value;
+    const projectDescription = document.getElementById("projectDescription").value;
+    
+    // Crear nuevo proyecto
+    const project = {
+        id: Date.now(),
+        name: projectName,
+        description: projectDescription,
+        tasks: {
+            todo: [],
+            inProgress: [],
+            done: []
+        }
+    };
+    
+    // Agregar proyecto a la lista y guardarlo en localStorage
+    projects.push(project);
+    localStorage.setItem("projects", JSON.stringify(projects));
+    
+    // Agregar proyecto al DOM
+    addProjectToDOM(project);
+    document.getElementById("projectModal").style.display = "none";
+    document.getElementById("projectForm").reset();
+});
+
+// Función para agregar proyectos al DOM
+function addProjectToDOM(project) {
+    const projectList = document.getElementById("projectList");
+    const projectCard = document.createElement("div");
+    projectCard.className = "project-card";
+    projectCard.innerHTML = `
+        <h3>${project.name}</h3>
+        <p>${project.description}</p>
+        <button onclick="goToProject(${project.id})">Ver Detalles</button>
+    `;
+    projectList.appendChild(projectCard);
+}
+
+// Cargar proyectos desde localStorage al iniciar la página
+function loadProjects() {
+    projects.forEach(project => addProjectToDOM(project));
+}
+
+// Función para redirigir a la página de detalles del proyecto
+function goToProject(projectId) {
+    // Guardar el ID del proyecto actual en localStorage
+    localStorage.setItem("currentProject", projectId);
+    // Redirigir a la página de detalles del proyecto
+    window.location.href = "project.html";
+}
+
+// Inicializar y cargar proyectos al cargar la página
+loadProjects();

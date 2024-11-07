@@ -7,19 +7,18 @@
 </head>
 <body>
 <header>
-  <h1>Gestion de Proyectos</h1>
-  <button id="logoutBtn">Cerrar Sesion</button>
+  <h1>Gestión de Proyectos</h1>
+  <button id="logoutBtn">Cerrar Sesión</button>
 </header>
 <main>
   <section class="project-selection">
     <h2>Selecciona un Proyecto</h2>
-    <div class="project-list" id="projectList">
-
-    </div>
+    <div class="project-list" id="projectList"></div>
     <button id="createProjectBtn">Crear Nuevo Proyecto</button>
   </section>
 </main>
 
+<!-- Modal para crear proyectos -->
 <div class="modal" id="projectModal">
   <div class="modal-content">
     <span class="close">&times;</span>
@@ -31,6 +30,16 @@
       <textarea id="projectDescription" required></textarea>
       <button type="submit">Crear Proyecto</button>
     </form>
+  </div>
+</div>
+
+<!-- Modal para ver detalles del proyecto -->
+<div class="modal" id="projectDetailsModal">
+  <div class="modal-content">
+    <span class="close" onclick="closeProjectDetails()">&times;</span>
+    <h2 id="projectDetailName">Detalles del Proyecto</h2>
+    <p id="projectDetailDescription"></p>
+    <button onclick="closeProjectDetails()">Cerrar</button>
   </div>
 </div>
 
