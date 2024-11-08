@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -183,6 +182,23 @@
             color: #555;
         }
 
+        .btn-edit {
+            background-color: #6a0d83;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            position: absolute;
+            top: 10px;
+            right: 60px;
+            cursor: pointer;
+        }
+
+        .btn-edit:hover {
+            background-color: #a750b5;
+        }
+
         .btn-delete {
             background-color: #ee5d6c;
             color: white;
@@ -201,7 +217,6 @@
         }
     </style>
 </head>
-
 <body>
     <header>
         <nav>
@@ -280,6 +295,7 @@
                 <p><strong>Miembro:</strong> ${miembro}</p>
                 <p><strong>Proyecto:</strong> ${proyecto}</p>
                 <p><strong>Fecha de entrega:</strong> ${fecha}</p>
+                <button class="btn-edit" onclick="editarTarea(this)">Editar</button>
                 <button class="btn-delete" onclick="eliminarTarea(this)">Borrar</button>
             `;
 
@@ -293,7 +309,21 @@
             const taskItem = button.parentElement;
             taskItem.remove();
         }
+
+        function editarTarea(button) {
+            const taskItem = button.parentElement;
+            const tarea = taskItem.querySelector('h4').textContent;
+            const miembro = taskItem.querySelector('p:nth-of-type(1)').textContent.split(': ')[1];
+            const proyecto = taskItem.querySelector('p:nth-of-type(2)').textContent.split(': ')[1];
+            const fecha = taskItem.querySelector('p:nth-of-type(3)').textContent.split(': ')[1];
+
+            document.getElementById('tarea').value = tarea;
+            document.getElementById('miembro').value = miembro;
+            document.getElementById('proyecto').value = proyecto;
+            document.getElementById('fecha').value = fecha;
+
+            taskItem.remove();
+        }
     </script>
 </body>
-
 </html>
