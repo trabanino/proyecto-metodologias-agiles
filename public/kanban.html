@@ -4,9 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Tablero Kanban con Drag and Drop</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="css/navindex.css">
     <link rel="stylesheet" href="css/kanban.css">
 </head>
 <body>
+    <header>
+        <nav>
+            <ul id="menulista">
+                <li><a href="home">Inicio</a></li>
+                <li><a href="#">Mas Informacion</a></li>
+                <li><a href="#">Conocenos</a></li>
+                <li><a href="#">Contacto</a></li>
+            </ul>
+        </nav>
+    </header>
+    <aside class="sidebar">
+        <a href="asignar_tareas.html"><i class="fas fa-plus"></i></a>
+        <a href="#"><i class="fas fa-tasks"></i></a>
+        <a href="#"><i class="fas fa-check"></i></a>
+        <a href="#"><i class="fas fa-users"></i></a>
+        <a href="#"><i class="fas fa-user-plus"></i></a>
+    </aside>
     <h1>Tablero Kanban con Drag and Drop</h1>
     <div class="board">
         <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)">

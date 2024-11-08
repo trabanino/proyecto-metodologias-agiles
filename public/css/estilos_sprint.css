@@ -1,4 +1,52 @@
+/* Estilos para historias y modal */
+.user-stories {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
 
+.story {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.story-content {
+    flex: 1;
+    margin-left: 15px;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 400px;
+    max-width: 90%;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+.hidden {
+    display: none;
+}
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
 
 /* Estilos generales */
@@ -7,6 +55,93 @@ body {
     font-family: 'Poppins', sans-serif;
     background-color: #f5f5f5;
 }
+
+header {
+    background-color: white;
+    color: #6a0d83;
+    padding: 20px 0;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    height: 100px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}
+
+nav {
+    width: 100%;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    justify-content: flex-end;
+    gap: 20px;
+    align-items: center;
+}
+
+nav ul li {
+    position: relative;
+}
+
+nav ul li a {
+    color: #6a0d83;
+    text-decoration: none;
+    text-transform: uppercase;
+    padding: 10px 15px;
+    display: block;
+}
+
+nav ul li a:hover {
+    color: #ee5d6c;
+}
+
+.sidebar {
+    width: 80px;
+    background-color: #eaeaea;
+    position: fixed;
+    top: 100px;
+    left: 0;
+    height: calc(100vh - 100px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 20px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+}
+
+.sidebar a {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: #c4c4c4;
+    color: white;
+    font-size: 24px;
+    margin-bottom: 15px;
+    transition: background-color 0.3s, transform 0.3s;
+    text-decoration: none;
+}
+
+.sidebar a:first-child {
+    background-color: #d35400;
+}
+
+.sidebar a i {
+    font-size: 20px;
+}
+
+.sidebar a:hover {
+    transform: scale(1.1);
+}
+
 
 .container {
     max-width: 1200px;
@@ -25,7 +160,7 @@ body {
     position: relative;
     display: flex;
     align-items: center;
-    margin-top: 30px;
+    margin-top: 120px;
 }
 
 .progress-text {
@@ -173,4 +308,81 @@ h1 {
     background-color: #ce4993;
     box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
     transform: scale(1.05);
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 400px;
+    max-width: 90%;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content h2 {
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    color: #6a0d83;
+}
+
+.modal-content label {
+    display: block;
+    margin-top: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+}
+
+.modal-content input,
+.modal-content textarea,
+.modal-content select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+}
+
+.modal-content .save-btn {
+    background-color: #6a0d83;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+.modal-content .save-btn:hover {
+    background-color: #ce4993;
+}
+
+.modal-content .close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 20px;
+    cursor: pointer;
+    color: #333;
+    font-weight: bold;
 }

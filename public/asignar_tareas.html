@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -183,6 +182,23 @@
             color: #555;
         }
 
+        .btn-edit {
+            background-color: #6a0d83;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            position: absolute;
+            top: 10px;
+            right: 60px;
+            cursor: pointer;
+        }
+
+        .btn-edit:hover {
+            background-color: #a750b5;
+        }
+
         .btn-delete {
             background-color: #ee5d6c;
             color: white;
@@ -201,7 +217,6 @@
         }
     </style>
 </head>
-
 <body>
     <header>
         <nav>
@@ -215,7 +230,7 @@
     </header>
 
     <aside class="sidebar">
-        <a href="#"><i class="fas fa-plus"></i></a>
+        <a href="asignar_tareas.html"><i class="fas fa-plus"></i></a>
         <a href="#"><i class="fas fa-tasks"></i></a>
         <a href="#"><i class="fas fa-check"></i></a>
         <a href="#"><i class="fas fa-users"></i></a>
@@ -280,20 +295,21 @@
                 <p><strong>Miembro:</strong> ${miembro}</p>
                 <p><strong>Proyecto:</strong> ${proyecto}</p>
                 <p><strong>Fecha de entrega:</strong> ${fecha}</p>
+                <button class="btn-edit">Editar</button>
                 <button class="btn-delete" onclick="eliminarTarea(this)">Borrar</button>
             `;
 
             document.getElementById('taskList').appendChild(taskItem);
 
-            alert('Tarea asignada exitosamente.');
             document.getElementById('taskForm').reset();
         }
 
         function eliminarTarea(button) {
-            const taskItem = button.parentElement;
-            taskItem.remove();
+            const confirmDelete = confirm("¿Estás seguro de que deseas eliminar esta tarea?");
+            if (confirmDelete) {
+                button.parentElement.remove();
+            }
         }
     </script>
 </body>
-
 </html>
