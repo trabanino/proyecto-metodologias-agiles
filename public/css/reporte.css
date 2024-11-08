@@ -1,0 +1,198 @@
+/* Paleta de colores */
+:root {
+    --yellow-color: #eeaf61;
+    --orange-color: #fb9062;
+    --pink-color: #ee5d6c;
+    --magenta-color: #ce4993;
+    --purple-color: #6a0d83;
+    --background-color: #ffffff;
+    --white-color: #ffffff;
+    --text-color: #333;
+}
+
+/* Estilo global */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    background-color: var(--white-color); /* Fondo de la página en blanco */
+}
+
+/* Menú superior */
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: linear-gradient(90deg, var(--magenta-color), var(--purple-color));
+    color: var(--white-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.top-nav h1 {
+    margin: 0;
+    font-size: 1.8em;
+    color: var(--yellow-color);
+}
+
+/* Estilos de los botones del menú superior */
+.top-nav nav a {
+    color: var(--white-color);
+    background-color: rgba(255, 255, 255, 0.1); /* Fondo sutil */
+    margin-left: 15px;
+    padding: 10px 20px;
+    border-radius: 20px; /* Bordes redondeados */
+    text-decoration: none;
+    font-size: 1.1em;
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.top-nav nav a:hover {
+    background-color: var(--yellow-color); /* Cambio de color de fondo */
+    color: var(--purple-color); /* Cambio de color de texto */
+    transform: scale(1.05); /* Efecto de crecimiento suave */
+}
+
+/* Menú lateral izquierdo */
+.side-nav {
+    position: fixed;
+    top: 70px; /* Debajo del menú superior */
+    left: 0;
+    width: 200px;
+    height: calc(100% - 70px);
+    background-color: var(--purple-color);
+    color: var(--white-color);
+    padding-top: 30px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    border-right: 4px solid var(--pink-color);
+}
+
+.side-nav nav a {
+    display: block;
+    color: var(--white-color);
+    padding: 12px 24px;
+    text-decoration: none;
+    font-size: 1.1em;
+    font-weight: bold;
+    transition: background-color 0.3s ease, border-left 0.3s ease;
+}
+
+.side-nav nav a:hover {
+    background-color: var(--yellow-color);
+    color: var(--purple-color);
+    border-left: 4px solid var(--magenta-color);
+}
+
+/* Ajustes para el contenido principal */
+.main-content {
+    margin-left: 220px; /* Para dejar espacio al menú lateral */
+    padding-top: 100px; /* Para dejar espacio al menú superior */
+    background-color: var(--white-color);
+    padding: 20px;
+}
+
+/* Contenedor principal (Tablero) */
+.board {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    background-color: var(--background-color); /* Fondo gris solo dentro del tablero */
+    border-radius: 10px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    max-width: 1200px;
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: wrap;
+    margin-top: 120px; /* Espacio entre el menú superior y el board */
+}
+
+/* Columnas */
+.column {
+    background-color: var(--white-color); /* Fondo blanco para columnas */
+    border: 2px solid var(--pink-color); /* Borde alrededor del contenedor gris */
+    border-radius: 8px;
+    padding: 20px;
+    width: 100%;
+    max-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.column-header {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--text-color);
+    padding: 10px 0;
+    text-align: left;
+    border-bottom: 2px solid var(--orange-color);
+}
+
+/* Tarjeta de tarea */
+.card {
+    background-color: var(--white-color);
+    border-left: 6px solid var(--yellow-color);
+    border-radius: 4px;
+    padding: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.card h3 {
+    color: var(--text-color);
+    font-size: 1em;
+    margin: 0;
+}
+
+.card p {
+    color: #555;
+    font-size: 0.9em;
+    margin: 0;
+}
+
+/* Botón de pie de página */
+.footer-button {
+    margin-top: 20px;
+    background-color: var(--magenta-color);
+    color: var(--white-color);
+    border: none;
+    border-radius: 20px;
+    padding: 10px 20px;
+    font-size: 1em;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.3s ease;
+}
+
+.footer-button:hover {
+    background-color: var(--yellow-color);
+}
+
+/* Barra de progreso */
+.progress-bar-container {
+    background-color: var(--orange-color);
+    border-radius: 10px;
+    overflow: hidden;
+    height: 10px;
+    margin-top: 10px;
+}
+
+.progress-bar {
+    background-color: var(--pink-color);
+    height: 100%;
+    transition: width 0.4s ease;
+}
