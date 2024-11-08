@@ -94,6 +94,9 @@ nav ul li a:hover {
     transform: scale(1.1);
 }
 
+h1{
+    margin-top: 120px;
+}
 .board {
     display: flex;
     gap: 15px;
