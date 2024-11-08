@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Proyectos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: white;
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: white;
+            color: #6a0d83;
+            padding: 20px 0;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            height: 100px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            width: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+
+        nav {
+            width: 100%;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: flex-end;
+            gap: 20px;
+            align-items: center;
+        }
+
+        nav ul li {
+            position: relative;
+        }
+
+        nav ul li a {
+            color: #6a0d83;
+            text-decoration: none;
+            text-transform: uppercase;
+            padding: 10px 15px;
+            display: block;
+        }
+
+        nav ul li a:hover {
+            color: #ee5d6c;
+        }
+
+        .sidebar {
+            width: 80px;
+            background-color: #eaeaea;
+            position: fixed;
+            top: 100px;
+            left: 0;
+            height: calc(100vh - 100px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            z-index: 999;
+        }
+
+        .sidebar a {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #c4c4c4;
+            color: white;
+            font-size: 24px;
+            margin-bottom: 15px;
+            transition: background-color 0.3s, transform 0.3s;
+            text-decoration: none;
+        }
+
+        .sidebar a:first-child {
+            background-color: #d35400;
+        }
+
+        .sidebar a i {
+            font-size: 20px;
+        }
+
+        .sidebar a:hover {
+            transform: scale(1.1);
+        }
+
+        .content {
+            margin-left: 100px;
+            padding: 20px;
+            padding-top: 120px;
+            flex-grow: 1;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .form-container {
+            max-width: 400px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        .btn-assign {
+            background-color: #6a0d83;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            max-width: 150px;
+        }
+
+        .btn-assign:hover {
+            background-color: #ce4993;
+        }
+
+        .task-list {
+            width: 45%;
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: #f8f8f8;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .task-item {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .task-item h4 {
+            margin-bottom: 5px;
+            color: #6a0d83;
+        }
+
+        .task-item p {
+            margin: 3px 0;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .btn-delete {
+            background-color: #ee5d6c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+        }
+
+        .btn-delete:hover {
+            background-color: #c44a56;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="#">Dashboard</a></li>
+                <li><a href="#">Información</a></li>
+                <li><a href="#">Miembros</a></li>
+                <li><a href="#">Ajustes</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <aside class="sidebar">
+        <a href="#"><i class="fas fa-plus"></i></a>
+        <a href="#"><i class="fas fa-tasks"></i></a>
+        <a href="#"><i class="fas fa-check"></i></a>
+        <a href="#"><i class="fas fa-users"></i></a>
+        <a href="#"><i class="fas fa-user-plus"></i></a>
+    </aside>
+
+    <main class="content">
+        <div class="form-container">
+            <h2>Asignar Tareas a los Miembros del Equipo</h2>
+            <form id="taskForm">
+                <div class="form-group">
+                    <label for="miembro">Selecciona un miembro del equipo:</label>
+                    <select id="miembro">
+                        <option value="">Selecciona un miembro</option>
+                        <option>Miembro 1</option>
+                        <option>Miembro 2</option>
+                        <option>Miembro 3</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="proyecto">Selecciona un proyecto:</label>
+                    <select id="proyecto">
+                        <option value="">Selecciona un proyecto</option>
+                        <option>Proyecto 1</option>
+                        <option>Proyecto 2</option>
+                        <option>Proyecto 3</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="tarea">Selecciona la tarea a asignar:</label>
+                    <input type="text" id="tarea" placeholder="Descripción de la tarea">
+                </div>
+                <div class="form-group">
+                    <label for="fecha">Fecha de entrega:</label>
+                    <input type="date" id="fecha">
+                </div>
+                <button type="button" class="btn-assign" onclick="asignarTarea()">Asignar Tarea</button>
+            </form>
+        </div>
+
+        <div class="task-list" id="taskList">
+            <h3>Tareas Asignadas</h3>
+        </div>
+    </main>
+
+    <script>
+        function asignarTarea() {
+            const miembro = document.getElementById('miembro').value;
+            const proyecto = document.getElementById('proyecto').value;
+            const tarea = document.getElementById('tarea').value;
+            const fecha = document.getElementById('fecha').value;
+
+            if (!miembro || !proyecto || !tarea || !fecha) {
+                alert('Por favor, completa todos los campos del formulario.');
+                return;
+            }
+
+            const taskItem = document.createElement('div');
+            taskItem.classList.add('task-item');
+            taskItem.innerHTML = `
+                <h4>${tarea}</h4>
+                <p><strong>Miembro:</strong> ${miembro}</p>
+                <p><strong>Proyecto:</strong> ${proyecto}</p>
+                <p><strong>Fecha de entrega:</strong> ${fecha}</p>
+                <button class="btn-delete" onclick="eliminarTarea(this)">Borrar</button>
+            `;
+
+            document.getElementById('taskList').appendChild(taskItem);
+
+            alert('Tarea asignada exitosamente.');
+            document.getElementById('taskForm').reset();
+        }
+
+        function eliminarTarea(button) {
+            const taskItem = button.parentElement;
+            taskItem.remove();
+        }
+    </script>
+</body>
+
+</html>
