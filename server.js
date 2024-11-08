@@ -189,6 +189,163 @@ async function main() {
             res.send(project);
         });
 
+        // invitar miembro al proyecto
+        app.post('/api/projects/:id/invite', verificarToken, async (req, res) => {
+            const projectId = req.params.id;
+            const userId = req.usuario.id;
+            const { email } = req.body;
+
+            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
+            if (!project) {
+                return res.status(404).json({ mensaje: 'proyecto no encontrado' });
+            }
+            if (project.owner.toString() !== userId && project.admins && !project.admins.includes(userId)) {
+                return res.status(403).json({ mensaje: 'no tienes permiso para invitar miembros' });
+            }
+
+            const userToInvite = await usersCollection.findOne({ correo: email });
+            if (!userToInvite) {
+                return res.status(404).json({ mensaje: 'usuario no encontrado' });
+            }
+
+            // agregar invitacion pendiente
+            await projectsCollection.updateOne(
+                { _id: project._id },
+                { $addToSet: { invitacionesPendientes: userToInvite._id.toString() } }
+            );
+
+            res.json({ mensaje: 'invitacion enviada' });
+        });
+
+        // obtener invitaciones pendientes para el usuario
+        app.get('/api/invites', verificarToken, async (req, res) => {
+            const userId = req.usuario.id;
+            const projects = await projectsCollection.find({ invitacionesPendientes: userId }).toArray();
+            res.send(projects);
+        });
+
+        // aceptar invitacion
+        app.post('/api/invites/:projectId/accept', verificarToken, async (req, res) => {
+            const projectId = req.params.projectId;
+            const userId = req.usuario.id;
+
+            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
+            if (!project) {
+                return res.status(404).json({ mensaje: 'proyecto no encontrado' });
+            }
+            if (!project.invitacionesPendientes || !project.invitacionesPendientes.includes(userId)) {
+                return res.status(400).json({ mensaje: 'no tienes una invitacion pendiente para este proyecto' });
+            }
+
+            await projectsCollection.updateOne(
+                { _id: project._id },
+                {
+                    $pull: { invitacionesPendientes: userId },
+                    $addToSet: { miembros: userId }
+                }
+            );
+
+            res.json({ mensaje: 'invitacion aceptada' });
+        });
+
+        // rechazar invitacion
+        app.post('/api/invites/:projectId/decline', verificarToken, async (req, res) => {
+            const projectId = req.params.projectId;
+            const userId = req.usuario.id;
+
+            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
+            if (!project) {
+                return res.status(404).json({ mensaje: 'proyecto no encontrado' });
+            }
+            if (!project.invitacionesPendientes || !project.invitacionesPendientes.includes(userId)) {
+                return res.status(400).json({ mensaje: 'no tienes una invitacion pendiente para este proyecto' });
+            }
+
+            await projectsCollection.updateOne(
+                { _id: project._id },
+                { $pull: { invitacionesPendientes: userId } }
+            );
+
+            res.json({ mensaje: 'invitacion rechazada' });
+        });
+
+        // eliminar miembro del proyecto
+        app.delete('/api/projects/:projectId/members/:memberId', verificarToken, async (req, res) => {
+            const projectId = req.params.projectId;
+            const memberId = req.params.memberId;
+            const userId = req.usuario.id;
+
+            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
+            if (!project) {
+                return res.status(404).json({ mensaje: 'proyecto no encontrado' });
+            }
+            if (project.owner.toString() !== userId && (!project.admins || !project.admins.includes(userId))) {
+                return res.status(403).json({ mensaje: 'no tienes permiso para eliminar miembros' });
+            }
+            if (project.owner.toString() === memberId) {
+                return res.status(400).json({ mensaje: 'no puedes eliminar al owner del proyecto' });
+            }
+
+            await projectsCollection.updateOne(
+                { _id: project._id },
+                { $pull: { miembros: memberId, admins: memberId } }
+            );
+
+            res.json({ mensaje: 'miembro eliminado' });
+        });
+
+        // asignar rol de admin a un miembro
+        app.post('/api/projects/:projectId/members/:memberId/role', verificarToken, async (req, res) => {
+            const projectId = req.params.projectId;
+            const memberId = req.params.memberId;
+            const userId = req.usuario.id;
+            const { role } = req.body;
+
+            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
+            if (!project) {
+                return res.status(404).json({ mensaje: 'proyecto no encontrado' });
+            }
+            if (project.owner.toString() !== userId) {
+                return res.status(403).json({ mensaje: 'solo el owner puede asignar roles' });
+            }
+
+            if (role === 'admin') {
+                await projectsCollection.updateOne(
+                    { _id: project._id },
+                    { $addToSet: { admins: memberId } }
+                );
+            } else if (role === 'miembro') {
+                await projectsCollection.updateOne(
+                    { _id: project._id },
+                    { $pull: { admins: memberId } }
+                );
+            } else {
+                return res.status(400).json({ mensaje: 'rol invalido' });
+            }
+
+            res.json({ mensaje: 'rol actualizado' });
+        });
+
+        // obtener información de un usuario
+        app.get('/api/users/:id', verificarToken, async (req, res) => {
+            const userId = req.params.id;
+
+            let objectId;
+            try {
+                objectId = new ObjectId(userId);
+            } catch (error) {
+                return res.status(400).json({ mensaje: 'Invalid user ID format' });
+            }
+
+            const usuario = await usersCollection.findOne({ _id: objectId }, { projection: { contraseña: 0 } });
+            if (!usuario) {
+                return res.status(404).json({ mensaje: 'usuario no encontrado' });
+            }
+            res.send(usuario);
+        });
+
+
+
         app.listen(PORT, () => {
             console.log(`Servidor en puerto ${PORT}`);
         });

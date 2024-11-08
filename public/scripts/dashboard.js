@@ -132,11 +132,67 @@ joinProjectForm.addEventListener('submit', async (event) => {
     }
 });
 
-// al cargar la página
 document.addEventListener('DOMContentLoaded', () => {
     if (!token) {
         window.location.href = '/login';
     } else {
+        loadInvitations();
         loadProjects();
     }
 });
+
+const invitationsSection = document.getElementById('invitationsSection');
+const invitationsList = document.getElementById('invitationsList');
+
+async function loadInvitations() {
+    const response = await fetch('/api/invites', {
+        headers: {
+            'Authorization': token
+        }
+    });
+    const invitations = await response.json();
+
+    if (invitations.length > 0) {
+        invitationsSection.style.display = 'block';
+        invitationsList.innerHTML = '';
+        invitations.forEach(invitation => {
+            const li = document.createElement('li');
+            li.textContent = `Invitacion al proyecto: ${invitation.nombre}`;
+
+            const acceptBtn = document.createElement('button');
+            acceptBtn.textContent = 'Aceptar';
+            acceptBtn.addEventListener('click', () => respondInvitation(invitation._id, true));
+
+            const declineBtn = document.createElement('button');
+            declineBtn.textContent = 'Rechazar';
+            declineBtn.addEventListener('click', () => respondInvitation(invitation._id, false));
+
+            li.appendChild(acceptBtn);
+            li.appendChild(declineBtn);
+            invitationsList.appendChild(li);
+        });
+    } else {
+        invitationsSection.style.display = 'none';
+    }
+}
+
+// Función para responder a una invitación
+async function respondInvitation(projectId, accept) {
+    const endpoint = accept ? `/api/invites/${projectId}/accept` : `/api/invites/${projectId}/decline`;
+
+    const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'Authorization': token
+        }
+    });
+
+    const resultado = await response.json();
+    if (response.ok) {
+        alert(resultado.mensaje);
+        loadInvitations();
+        loadProjects();
+    } else {
+        alert(resultado.mensaje || 'Error al responder a la invitacion');
+    }
+}
