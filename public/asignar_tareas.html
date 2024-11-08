@@ -295,34 +295,20 @@
                 <p><strong>Miembro:</strong> ${miembro}</p>
                 <p><strong>Proyecto:</strong> ${proyecto}</p>
                 <p><strong>Fecha de entrega:</strong> ${fecha}</p>
-                <button class="btn-edit" onclick="editarTarea(this)">Editar</button>
+                <button class="btn-edit">Editar</button>
                 <button class="btn-delete" onclick="eliminarTarea(this)">Borrar</button>
             `;
 
             document.getElementById('taskList').appendChild(taskItem);
 
-            alert('Tarea asignada exitosamente.');
             document.getElementById('taskForm').reset();
         }
 
         function eliminarTarea(button) {
-            const taskItem = button.parentElement;
-            taskItem.remove();
-        }
-
-        function editarTarea(button) {
-            const taskItem = button.parentElement;
-            const tarea = taskItem.querySelector('h4').textContent;
-            const miembro = taskItem.querySelector('p:nth-of-type(1)').textContent.split(': ')[1];
-            const proyecto = taskItem.querySelector('p:nth-of-type(2)').textContent.split(': ')[1];
-            const fecha = taskItem.querySelector('p:nth-of-type(3)').textContent.split(': ')[1];
-
-            document.getElementById('tarea').value = tarea;
-            document.getElementById('miembro').value = miembro;
-            document.getElementById('proyecto').value = proyecto;
-            document.getElementById('fecha').value = fecha;
-
-            taskItem.remove();
+            const confirmDelete = confirm("¿Estás seguro de que deseas eliminar esta tarea?");
+            if (confirmDelete) {
+                button.parentElement.remove();
+            }
         }
     </script>
 </body>
