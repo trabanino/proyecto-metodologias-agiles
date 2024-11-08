@@ -33,8 +33,22 @@
       <li><a href="#" id="sprintsBtn"><i class="fas fa-running"></i> Ver Sprints</a></li>
       <li><a href="#" id="reportsBtn"><i class="fas fa-chart-line"></i> Ver Reportes</a></li>
       <li><a href="#" id="miembrosBtn"><i class="fas fa-users"></i> Miembros</a></li>
+      <li><a href="#" id="plazBtn"><i class="fas fa-chart-line"></i> Plazo</a></li>
     </ul>
+    <!-- Modal for setting the project deadline -->
+    <div id="deadlineModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Set Project Deadline</h2>
+        <label for="deadline">Select Deadline:</label>
+        <input type="date" id="deadline" name="deadline">
+        <button id="saveDeadlineBtn">Save</button>
+      </div>
+    </div>
+
   </div>
+
+
 
   <!-- Sección de Miembros -->
   <div id="miembrosSection" class="miembros-section" style="display: none;">
@@ -48,6 +62,9 @@
     </div>
   </div>
 </div>
+
+
+
 
 <script src="/scripts/project_view.js"></script>
 </body>
