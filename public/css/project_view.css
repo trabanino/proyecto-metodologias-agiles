@@ -1,0 +1,88 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f4f4f4;
+}
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.back-btn {
+    background-color: #ff6666;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    display: inline-flex;
+    align-items: center;
+    font-size: 16px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    text-decoration: none;
+}
+
+.back-btn i {
+    margin-right: 5px;
+}
+
+.project-header {
+    margin-bottom: 30px;
+}
+
+.project-header h1 {
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+
+.project-header p {
+    font-size: 1.2em;
+    color: #666;
+}
+
+.project-menu ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.project-menu li {
+    flex: 1 1 calc(50% - 20px);
+    background-color: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.project-menu li a {
+    text-decoration: none;
+    color: #333;
+    font-size: 1.1em;
+    display: block;
+}
+
+.project-menu li a:hover {
+    color: #ff6666;
+}
+
+.project-menu li i {
+    font-size: 2em;
+    margin-bottom: 10px;
+    color: #ff6666;
+}
+
+@media (max-width: 600px) {
+    .project-menu li {
+        flex: 1 1 100%;
+    }
+}

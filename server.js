@@ -175,6 +175,20 @@ async function main() {
             res.send(result);
         });
 
+        // obtener detalles del proyecto
+        app.get('/api/projects/:id', verificarToken, async (req, res) => {
+            const projectId = req.params.id;
+            const userId = req.usuario.id;
+            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
+            if (!project) {
+                return res.status(404).json({ mensaje: 'proyecto no encontrado' });
+            }
+            if (!project.miembros.includes(userId)) {
+                return res.status(403).json({ mensaje: 'no tienes acceso a este proyecto' });
+            }
+            res.send(project);
+        });
+
         app.listen(PORT, () => {
             console.log(`Servidor en puerto ${PORT}`);
         });
