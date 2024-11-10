@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablero de Reportes</title>
+    <link rel="stylesheet" href="../user5../userStory5.css">
+
+</head>
+<body>
+    <!-- Menú superior -->
+    <header class="top-nav">
+        <h1>Tablero de Reportes</h1>
+        <nav>
+            <a href="#resumen">Resumen</a>
+            <a href="#progreso">Progreso</a>
+            <a href="#detalles">Detalles de Actividades</a>
+        </nav>
+    </header>
+
+    <!-- Menú lateral izquierdo -->
+    <aside class="side-nav">
+        <nav>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="reportes.html">Reportes</a>
+            <a href="configuracion.html">Configuración</a>
+            <a href="ayuda.html">Ayuda</a>
+        </nav>
+    </aside>
+
+    <!-- Contenido principal -->
+    <div class="main-content">
+        <div class="board">
+            <!-- Encabezado de reportes en proceso -->
+            <header class="column-header">
+                <h2>Reportes en Proceso</h2>
+            </header>
+
+            <!-- Contenido de reportes en proceso -->
+            <div style="padding: 10px; font-size: 1em; line-height: 1.5;">
+                <h3 style="color: var(--text-color); margin-bottom: 8px;">Generar Reporte de Avance</h3>
+                <p>Informe el progreso a los stakeholders de manera rápida y eficaz.</p>
+                <label for="progress-bar" style="display: block; margin-top: 15px; font-weight: bold;">Progreso del proyecto</label>
+                
+                <!-- Barra de progreso -->
+                <div class="progress-bar-container" style="margin: 15px 0;">
+                    <div id="progress-bar" class="progress-bar" style="width: 0%; height: 12px; border-radius: 5px;"></div>
+                </div>
+                
+                <!-- Botón de acción y estado del reporte -->
+                <button  style="padding: 8px 15px; border-radius: 20px; font-size: 1em; margin-top: 10px; background-color: var(--magenta-color); color: var(--white-color); border: none; cursor: pointer;">
+                    Generar Reporte
+                </button>
+                <p id="report-status" style="margin-top: 10px; font-size: 0.9em; color: #555;">No se ha generado ningún reporte aún.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function generateReport() {
+            const progressBar = document.getElementById("progress-bar");
+            const reportStatus = document.getElementById("report-status");
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    reportStatus.textContent = "Reporte generado exitosamente. Redirigiendo al reporte...";
+                    setTimeout(() => {
+                        window.location.href = "reporte.html";
+                    }, 1000);
+                } else {
+                    progress += 10;
+                    progressBar.style.width = progress + "%";
+                    reportStatus.textContent = "Generando reporte... " + progress + "% completado.";
+                }
+            }, 500);
+        }
+    </script>
+</body>
+</html>
