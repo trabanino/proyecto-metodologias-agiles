@@ -25,6 +25,14 @@ function addNewColumn() {
     }
 }
 
+document.addEventListener("DOMContentLoaded", () => {
+    // Asigna el evento al botón Añadir Estado
+    const addColumnButton = document.querySelector(".add-column-container");
+    if (addColumnButton) {
+        addColumnButton.addEventListener("click", addNewColumn);
+    }
+});
+
 function openTaskModal() {
     document.getElementById("task-title").value = currentTask ? currentTask.querySelector(".task-title").textContent.trim() : "";
     document.getElementById("task-description").value = currentTask ? currentTask.querySelector(".task-description").textContent.trim() : "";
