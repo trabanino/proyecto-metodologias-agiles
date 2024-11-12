@@ -5,6 +5,7 @@ const urlParams = new URLSearchParams(window.location.search);
 const projectId = urlParams.get('projectId');
 const token = localStorage.getItem('token');
 let projectMembers = [];
+let isOwner = false;
 
 if (!token) {
     window.location.href = '/login';
@@ -23,6 +24,15 @@ async function loadKanbanBoard() {
         }
         const project = await projectResponse.json();
         document.getElementById('projectName').textContent = project.nombre;
+
+        // Check if the user is the owner
+        const userId = parseJwt(token).id;
+        isOwner = project.owner === userId;
+
+        // Show delete project button if owner
+        if (isOwner) {
+            document.getElementById('deleteProjectBtn').style.display = 'block';
+        }
 
         // Load project members
         projectMembers = [];
@@ -53,6 +63,9 @@ async function loadKanbanBoard() {
 
         renderKanbanBoard(tasks, project.columns);
 
+        // Load notifications
+        loadNotifications();
+
     } catch (error) {
         console.error('Error:', error);
         alert('Error al cargar el tablero Kanban');
@@ -78,20 +91,28 @@ function renderKanbanBoard(tasks, columns) {
         const columnTasks = tasks.filter(task => task.status === columnName);
 
         columnTasks.forEach(taskData => {
+            // Ensure taskData properties have default values
+            const title = taskData.title || 'Sin título';
+            const description = taskData.description || '';
+            const urgencyClass = taskData.urgency || 'label-yellow';
+            const assigneesArray = Array.isArray(taskData.assignees) ? taskData.assignees : [];
+            const notes = taskData.notes || '';
+
+            const assigneeNames = projectMembers
+                .filter(member => assigneesArray.includes(member.id))
+                .map(member => member.nombre);
+
             const task = document.createElement('div');
-            task.className = `task ${taskData.urgency}`;
+            task.className = `task ${urgencyClass}`;
             task.draggable = true;
             task.setAttribute('ondragstart', 'drag(event)');
             task.setAttribute('data-task-id', taskData._id);
-            task.setAttribute('data-task-notes', taskData.notes || '');
-            task.setAttribute('data-assignees', taskData.assignees ? taskData.assignees.join(',') : '');
-            const assigneeNames = projectMembers
-                .filter(member => taskData.assignees.includes(member.id))
-                .map(member => member.nombre);
+            task.setAttribute('data-task-notes', notes);
+            task.setAttribute('data-assignees', assigneesArray.join(','));
 
             task.innerHTML = `
-                <div class="task-title">${taskData.title}</div>
-                <div class="task-description">${taskData.description}</div>
+                <div class="task-title">${title}</div>
+                <div class="task-description">${description}</div>
                 <div class="assignees">${assigneeNames.length > 0 ? 'Asignado a: ' + assigneeNames.join(', ') : ''}</div>
                 <button class="edit-task" onclick="openEditModal(this)">✏️</button>
                 <button class="delete-task" onclick="confirmDeleteTask(event, this)">X</button>
@@ -114,6 +135,8 @@ function addTask(button) {
 
 function openTaskModal(column) {
     targetColumn = column || targetColumn;
+
+    // Set default values if currentTask is null
     document.getElementById("task-title").value = currentTask ? currentTask.querySelector(".task-title").textContent.trim() : "";
     document.getElementById("task-description").value = currentTask ? currentTask.querySelector(".task-description").textContent.trim() : "";
     document.getElementById("task-notes").value = currentTask ? currentTask.getAttribute('data-task-notes') || '' : '';
@@ -132,7 +155,7 @@ function openTaskModal(column) {
     });
 
     if (currentTask) {
-        const assignedMemberIds = currentTask.getAttribute('data-assignees').split(',');
+        const assignedMemberIds = currentTask.getAttribute('data-assignees').split(',').filter(id => id);
         for (let option of assigneesSelect.options) {
             if (assignedMemberIds.includes(option.value)) {
                 option.selected = true;
@@ -156,6 +179,7 @@ document.querySelector(".overlay").addEventListener("click", () => {
     closeTaskModal();
     closeMembersModal();
     closeAddColumnModal();
+    closeNotificationsModal();
 });
 
 function openEditModal(button) {
@@ -330,6 +354,7 @@ async function drop(event) {
                 }
                 // Move the task element to the new column
                 targetColumn.insertBefore(taskElement, targetColumn.querySelector('.add-task'));
+                taskElement.setAttribute('data-status', newStatus);
             } catch (error) {
                 console.error('Error:', error);
                 alert('Error al actualizar el estado de la tarea');
@@ -345,8 +370,49 @@ function goBack() {
     window.location.href = '/dashboard';
 }
 
-function openNotifications() {
-    alert('No hay notificaciones nuevas');
+function toggleNotifications() {
+    const notificationsModal = document.getElementById('notificationsModal');
+    if (notificationsModal.style.display === 'block') {
+        closeNotificationsModal();
+    } else {
+        openNotificationsModal();
+    }
+}
+
+function openNotificationsModal() {
+    document.getElementById('notificationsModal').style.display = 'block';
+    document.querySelector('.overlay').style.display = 'block';
+}
+
+function closeNotificationsModal() {
+    document.getElementById('notificationsModal').style.display = 'none';
+    document.querySelector('.overlay').style.display = 'none';
+}
+
+async function loadNotifications() {
+    try {
+        const response = await fetch('/api/notifications', {
+            headers: {
+                'Authorization': token
+            }
+        });
+        if (!response.ok) {
+            console.error('Error fetching notifications');
+            return;
+        }
+        const notifications = await response.json();
+        const notificationsList = document.getElementById('notificationsList');
+        notificationsList.innerHTML = '';
+        notifications.forEach(notification => {
+            const li = document.createElement('li');
+            li.textContent = notification.message;
+            notificationsList.appendChild(li);
+        });
+        const notificationCount = document.getElementById('notificationCount');
+        notificationCount.textContent = notifications.length > 0 ? notifications.length : '';
+    } catch (error) {
+        console.error('Error:', error);
+    }
 }
 
 function addTaskFromSidebar() {
@@ -476,5 +542,45 @@ async function deleteColumn(columnName) {
     } catch (error) {
         console.error('Error:', error);
         alert('Error al eliminar la columna');
+    }
+}
+
+function confirmDeleteProject() {
+    const projectName = document.getElementById('projectName').textContent;
+    const inputName = prompt(`ESTAS A PUNTO DE ELIMINAR EL PROYECTO \nPara confirmar, por favor ingresa el nombre del proyecto: "${projectName}"`);
+    if (inputName === projectName) {
+        deleteProject();
+    } else {
+        alert('El nombre ingresado no coincide. Operación cancelada.');
+    }
+}
+
+async function deleteProject() {
+    try {
+        const response = await fetch(`/api/projects/${projectId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': token
+            }
+        });
+        if (!response.ok) {
+            alert('Error al eliminar el proyecto');
+            return;
+        }
+        alert('Proyecto eliminado exitosamente');
+        window.location.href = '/dashboard';
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al eliminar el proyecto');
+    }
+}
+
+function parseJwt(token) {
+    try {
+        const base64Payload = token.split('.')[1];
+        const payload = atob(base64Payload);
+        return JSON.parse(payload);
+    } catch (e) {
+        return null;
     }
 }

@@ -365,7 +365,7 @@ async function main() {
         app.post('/api/projects/:projectId/tasks', verificarToken, async (req, res) => {
             const projectId = req.params.projectId;
             const userId = req.usuario.id;
-            const { title, description, assignees, urgency, status } = req.body;
+            const { title, description, notes, assignees, urgency, status } = req.body;
 
             const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
             if (!project) {
@@ -377,10 +377,11 @@ async function main() {
 
             const newTask = {
                 projectId,
-                title,
-                description,
-                assignees,
-                urgency,
+                title: title || 'Sin título',
+                description: description || '',
+                notes: notes || '',
+                assignees: Array.isArray(assignees) ? assignees : [],
+                urgency: urgency || 'label-yellow',
                 status
             };
 
@@ -394,7 +395,7 @@ async function main() {
             const projectId = req.params.projectId;
             const taskId = req.params.taskId;
             const userId = req.usuario.id;
-            const { title, description, assignees, urgency, status } = req.body;
+            const updateFields = req.body;
 
             const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
             if (!project) {
@@ -406,7 +407,7 @@ async function main() {
 
             await tasksCollection.updateOne(
                 { _id: new ObjectId(taskId) },
-                { $set: { title, description, assignees, urgency, status } }
+                { $set: updateFields }
             );
 
             res.json({ mensaje: 'Tarea actualizada' });
@@ -429,6 +430,17 @@ async function main() {
             await tasksCollection.deleteOne({ _id: new ObjectId(taskId) });
 
             res.json({ mensaje: 'Tarea eliminada' });
+        });
+
+        // Get notifications
+        app.get('/api/notifications', verificarToken, async (req, res) => {
+            const userId = req.usuario.id;
+            const projects = await projectsCollection.find({ invitacionesPendientes: userId }).toArray();
+            const notifications = projects.map(project => ({
+                message: `Invitación al proyecto: ${project.nombre}`,
+                projectId: project._id
+            }));
+            res.send(notifications);
         });
 
         // Add new column to project

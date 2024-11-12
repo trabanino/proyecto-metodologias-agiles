@@ -85,7 +85,8 @@
     color: #333;
     margin-top: 5px;
 }
-.add-task, .add-column {
+
+.add-task {
     background-color: #757575;
     color: #ffffff;
     border: none;
@@ -119,19 +120,34 @@
     color: #000;
     padding: 20px;
     border-radius: 8px;
-    width: 300px;
+    width: 400px;
+    max-height: 80%;
+    overflow-y: auto;
 }
 
-.modal-content {
-    position: relative;
-    background-color: #ffffff;
-    padding: 20px;
-    border-radius: 8px;
-    width: 300px;
-    margin: auto;
+.modal h2 {
+    margin-top: 0;
 }
 
-.modal-content .close {
+.modal input,
+.modal textarea,
+.modal select {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 5px;
+    box-sizing: border-box;
+}
+
+.modal button {
+    background-color: #4caf50;
+    color: #ffffff;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.modal .close {
     position: absolute;
     top: 10px;
     right: 15px;
@@ -156,35 +172,48 @@
     margin-bottom: 5px;
 }
 
-.members-btn {
-    background-color: #6a0d83;
-    color: white;
+.sidebar nav ul li {
+    margin-bottom: 10px;
+}
+
+.sidebar nav ul li button {
+    background-color: #cfcfcf;
     border: none;
-    padding: 10px;
-    border-radius: 5px;
+    color: #fff;
+    font-size: 24px;
     cursor: pointer;
-    margin-left: 10px;
-}
-
-.back-btn {
-    background-color: #ff6666;
-    color: white;
-    border: none;
+    border-radius: 45px;
     padding: 10px;
-    border-radius: 5px;
-    cursor: pointer;
 }
 
-.add-column-container {
-    text-align: center;
-    margin-top: 20px;
+.sidebar nav ul li button:hover {
+    background-color: #616161;
 }
 
-.add-column {
-    background-color: #4caf50;
+#notificationBtn {
+    position: relative;
+}
+
+.notification-count {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: #e53935;
     color: #ffffff;
-    padding: 10px 20px;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 12px;
+}
+
+.delete-project-btn {
+    background-color: #d32f2f;
+    color: #ffffff;
     border: none;
     border-radius: 5px;
     cursor: pointer;
+    padding: 10px;
+}
+
+.delete-project-btn:hover {
+    background-color: #c62828;
 }

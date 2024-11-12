@@ -15,8 +15,9 @@
             <ul>
                 <li><button onclick="openAddColumnModal()"><i class="fas fa-columns"></i></button></li>
                 <li><button onclick="openMembersModal()"><i class="fas fa-users"></i></button></li>
-                <li><button onclick="openNotifications()"><i class="fas fa-bell"></i></button></li>
+                <li><button onclick="toggleNotifications()" id="notificationBtn"><i class="fas fa-bell"></i><span id="notificationCount" class="notification-count"></span></button></li>
                 <li><button onclick="goBack()"><i class="fas fa-arrow-left"></i></button></li>
+                <li id="deleteProjectBtn" style="display: none;"><button onclick="confirmDeleteProject()"><i class="fas fa-trash"></i></button></li>
             </ul>
         </nav>
     </aside>
@@ -71,6 +72,14 @@
             <input type="email" id="emailInvitar" placeholder="Correo del miembro">
             <button id="invitarBtn">Invitar</button>
         </div>
+    </div>
+</div>
+
+<div class="modal" id="notificationsModal">
+    <div class="modal-content">
+        <span class="close" onclick="closeNotificationsModal()">&times;</span>
+        <h2>Notificaciones</h2>
+        <ul id="notificationsList"></ul>
     </div>
 </div>
 
