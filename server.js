@@ -453,6 +453,48 @@ async function main() {
             res.json({ mensaje: 'Columna añadida' });
         });
 
+        // Delete tasks by status
+        app.delete('/api/projects/:projectId/tasks', verificarToken, async (req, res) => {
+            const projectId = req.params.projectId;
+            const userId = req.usuario.id;
+            const { status } = req.body;
+
+            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
+            if (!project) {
+                return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
+            }
+            if (!project.miembros.includes(userId)) {
+                return res.status(403).json({ mensaje: 'No tienes acceso a este proyecto' });
+            }
+
+            await tasksCollection.deleteMany({ projectId, status });
+
+            res.json({ mensaje: 'Tareas eliminadas' });
+        });
+
+        // Delete column from project
+        app.delete('/api/projects/:projectId/columns', verificarToken, async (req, res) => {
+            const projectId = req.params.projectId;
+            const userId = req.usuario.id;
+            const { columnName } = req.body;
+
+            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
+            if (!project) {
+                return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
+            }
+            if (!project.miembros.includes(userId)) {
+                return res.status(403).json({ mensaje: 'No tienes acceso a este proyecto' });
+            }
+
+            await projectsCollection.updateOne(
+                { _id: project._id },
+                { $pull: { columns: columnName } }
+            );
+
+            res.json({ mensaje: 'Columna eliminada' });
+        });
+
+        // Start the server
         app.listen(PORT, () => {
             console.log(`Servidor en puerto ${PORT}`);
         });

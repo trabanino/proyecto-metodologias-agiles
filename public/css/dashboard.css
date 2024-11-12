@@ -1,11 +1,9 @@
-/* Reset de estilos básicos */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-/* Estilos globales */
 body {
     font-family: 'Arial', sans-serif;
     line-height: 1.6;
@@ -16,13 +14,11 @@ body {
     overflow: hidden;
 }
 
-/* Contenedor principal */
 .container {
     display: flex;
     width: 100%;
 }
 
-/* Barra lateral */
 .sidebar {
     width: 80px;
     background-color: #f1f1f1;
@@ -71,7 +67,6 @@ nav ul li button {
     cursor: pointer;
 }
 
-/* Botón regresar */
 .back-btn {
     background-color: #ff6666;
     color: white;
@@ -84,14 +79,12 @@ nav ul li button {
     cursor: pointer;
 }
 
-/* Contenido principal */
 main {
     flex: 1;
     padding: 20px;
     overflow-y: auto;
 }
 
-/* Encabezado */
 header {
     display: flex;
     justify-content: space-between;
@@ -103,7 +96,6 @@ header h1 {
     font-size: 2rem;
 }
 
-/* Estilos de las tarjetas de proyectos */
 .project-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -137,7 +129,6 @@ header h1 {
     font-size: 14px;
 }
 
-/* Modal */
 .modal {
     display: none;
     position: fixed;
@@ -186,7 +177,7 @@ header h1 {
     font-size: 24px;
     cursor: pointer;
 }
-/* Styles for project cards */
+
 .project-card {
     background-color: #ffffff;
     padding: 20px;
@@ -206,7 +197,6 @@ header h1 {
     margin-bottom: 5px;
 }
 
-/* Styles for notifications */
 #notificationsSection {
     background-color: #fff;
     padding: 20px;
@@ -218,7 +208,6 @@ header h1 {
     margin-bottom: 10px;
 }
 
-/* Botón de eliminar proyecto */
 .delete-btn {
     background-color: red;
     color: white;

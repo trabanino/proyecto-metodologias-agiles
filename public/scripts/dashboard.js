@@ -56,13 +56,37 @@ async function loadProjects() {
             joinProjectModal.style.display = 'flex';
         });
     } else {
-        projects.forEach(project => {
+        for (const project of projects) {
             const projectCard = document.createElement('div');
             projectCard.classList.add('project-card');
+
+            // Get up to 3 collaborators
+            const collaborators = await Promise.all(project.miembros.slice(0, 3).map(async (memberId) => {
+                const response = await fetch(`/api/users/${memberId}`, {
+                    headers: {
+                        'Authorization': token
+                    }
+                });
+                const user = await response.json();
+                return user.nombre;
+            }));
+            const collaboratorsText = collaborators.join(', ');
+
+            // Project type icon
+            let projectIcon;
+            if (project.tipo === 'kanban') {
+                projectIcon = '<i class="fas fa-columns"></i>';
+            } else if (project.tipo === 'scrum') {
+                projectIcon = '<i class="fas fa-sync-alt"></i>';
+            } else {
+                projectIcon = '<i class="fas fa-project-diagram"></i>';
+            }
+
             projectCard.innerHTML = `
-                <div class="project-icon"></div>
+                <div class="project-icon">${projectIcon}</div>
                 <h2>${project.nombre}</h2>
                 <p>${project.descripcion}</p>
+                <p><strong>Colaboradores:</strong> ${collaboratorsText}${project.miembros.length > 3 ? ', ...' : ''}</p>
             `;
             projectCard.addEventListener('click', () => {
                 if (project.tipo === 'kanban') {
@@ -74,7 +98,7 @@ async function loadProjects() {
                 }
             });
             projectGrid.appendChild(projectCard);
-        });
+        }
     }
 }
 
@@ -153,7 +177,7 @@ async function loadInvitations() {
         invitationsList.innerHTML = '';
         invitations.forEach(invitation => {
             const li = document.createElement('li');
-            li.textContent = `Invitacion al proyecto: ${invitation.nombre}`;
+            li.textContent = `Invitación al proyecto: ${invitation.nombre}`;
 
             const acceptBtn = document.createElement('button');
             acceptBtn.textContent = 'Aceptar';
@@ -188,6 +212,15 @@ async function respondInvitation(projectId, accept) {
         loadInvitations();
         loadProjects();
     } else {
-        alert(resultado.mensaje || 'Error al responder a la invitacion');
+        alert(resultado.mensaje || 'Error al responder a la invitación');
     }
+}
+
+function openNotifications() {
+    alert('No hay notificaciones nuevas');
+}
+
+function logout() {
+    localStorage.removeItem('token');
+    window.location.href = '/login';
 }

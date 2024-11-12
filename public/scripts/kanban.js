@@ -239,13 +239,20 @@ function drag(event) {
 
 async function drop(event) {
     event.preventDefault();
-    const targetElement = event.target.closest(".column");
-    if (targetElement) {
+    const targetColumn = event.target.closest(".column");
+    if (targetColumn) {
         const taskId = event.dataTransfer.getData("task-id");
-        const sourceColumn = event.dataTransfer.getData("source-column");
-        const newStatus = targetElement.querySelector('h2').textContent;
+        const sourceColumnName = event.dataTransfer.getData("source-column");
+        const newStatus = targetColumn.querySelector('h2').textContent;
 
-        if (sourceColumn !== newStatus) {
+        // Find the task element being dragged
+        const taskElement = document.querySelector(`[data-task-id='${taskId}']`);
+        if (!taskElement) {
+            console.error('Task element not found');
+            return;
+        }
+
+        if (sourceColumnName !== newStatus) {
             try {
                 const response = await fetch(`/api/projects/${projectId}/tasks/${taskId}`, {
                     method: 'PUT',
@@ -259,11 +266,15 @@ async function drop(event) {
                     alert('Error al actualizar el estado de la tarea');
                     return;
                 }
-                loadKanbanBoard();
+                // Move the task element to the new column
+                targetColumn.insertBefore(taskElement, targetColumn.querySelector('.add-task'));
             } catch (error) {
                 console.error('Error:', error);
                 alert('Error al actualizar el estado de la tarea');
             }
+        } else {
+            // Move the task element to the new position within the same column
+            targetColumn.insertBefore(taskElement, event.target.closest('.task'));
         }
     }
 }
