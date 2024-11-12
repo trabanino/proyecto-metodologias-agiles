@@ -3,6 +3,8 @@ let isCreatingNewTask = false;
 let targetColumn = null;
 let projectId = null;
 let token = localStorage.getItem('token');
+let projectMembers = [];
+let membersMap = {};
 
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -12,8 +14,118 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'login.html';
     }
 
+    loadProjectDetails();
+    loadProjectMembers();
     loadBoard();
+
+    document.getElementById('addColumnBtn').addEventListener('click', addNewColumn);
+    document.getElementById('manageMembersBtn').addEventListener('click', openMembersModal);
+    document.getElementById('projectSettingsBtn').addEventListener('click', openSettingsModal);
+    document.getElementById('setDeadlineBtn').addEventListener('click', openDeadlineModal);
+    document.getElementById('logoutBtn').addEventListener('click', logout);
 });
+
+async function loadProjectDetails() {
+    const response = await fetch(`/api/projects/${projectId}`, {
+        headers: {
+            'Authorization': token
+        }
+    });
+
+    if (response.ok) {
+        const project = await response.json();
+        document.getElementById('projectTitle').textContent = project.nombre;
+        document.getElementById('projectName').value = project.nombre;
+        document.getElementById('projectDescription').value = project.descripcion;
+        document.getElementById('deadline').value = project.deadline ? project.deadline.split('T')[0] : '';
+    } else {
+        alert('Error al cargar detalles del proyecto');
+    }
+}
+
+async function loadProjectMembers() {
+    const response = await fetch(`/api/projects/${projectId}`, {
+        headers: {
+            'Authorization': token
+        }
+    });
+
+    if (response.ok) {
+        const project = await response.json();
+        projectMembers = project.miembros;
+        await loadMembersInfo();
+        displayMembers();
+        loadInvitations();
+    } else {
+        alert('Error al cargar miembros del proyecto');
+    }
+}
+
+async function loadMembersInfo() {
+    for (const memberId of projectMembers) {
+        const response = await fetch(`/api/users/${memberId}`, {
+            headers: {
+                'Authorization': token
+            }
+        });
+
+        if (response.ok) {
+            const user = await response.json();
+            membersMap[memberId] = `${user.nombre} (${user.correo})`;
+        } else {
+            membersMap[memberId] = 'Desconocido';
+        }
+    }
+}
+
+function displayMembers() {
+    const membersList = document.getElementById('membersList');
+    membersList.innerHTML = '';
+    for (const [memberId, memberName] of Object.entries(membersMap)) {
+        const li = document.createElement('li');
+        li.textContent = memberName;
+        membersList.appendChild(li);
+    }
+}
+
+async function loadInvitations() {
+    const response = await fetch(`/api/projects/${projectId}/invitations`, {
+        headers: {
+            'Authorization': token
+        }
+    });
+
+    if (response.ok) {
+        const invitations = await response.json();
+        const invitationsList = document.getElementById('invitationsList');
+        invitationsList.innerHTML = '';
+        invitations.forEach(invitation => {
+            const li = document.createElement('li');
+            li.textContent = `${invitation.nombre} (${invitation.correo})`;
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Cancelar';
+            cancelBtn.addEventListener('click', () => cancelInvitation(invitation._id));
+            li.appendChild(cancelBtn);
+            invitationsList.appendChild(li);
+        });
+    }
+}
+
+async function cancelInvitation(userId) {
+    const response = await fetch(`/api/projects/${projectId}/invitations/${userId}`, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': token
+        }
+    });
+
+    if (response.ok) {
+        alert('Invitación cancelada');
+        loadInvitations();
+    } else {
+        alert('Error al cancelar la invitación');
+    }
+}
 
 async function loadBoard() {
     const response = await fetch(`/api/projects/${projectId}/kanban`, {
@@ -56,7 +168,7 @@ function renderBoard(boardData) {
             taskElement.innerHTML = `
                 <div class="task-title">${task.title}</div>
                 <div class="task-description">${task.description}</div>
-                <div class="assignees">${task.assignees.join(', ')}</div>
+                <div class="assignees">${task.assignees.map(id => membersMap[id] || 'Desconocido').join(', ')}</div>
                 <button class="edit-task" onclick="openEditModal(this)">✏️</button>
                 <button class="delete-task" onclick="confirmDeleteTask(event, this)">X</button>
             `;
@@ -74,28 +186,61 @@ function addTask(button) {
     openTaskModal();
 }
 
-function addNewColumn() {
+async function addNewColumn() {
     const columnName = prompt("Ingrese el nombre del nuevo estado:");
     if (columnName) {
-        // Save column to server
-        // Then reload the board
+        const response = await fetch(`/api/projects/${projectId}/kanban/columns`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token
+            },
+            body: JSON.stringify({ title: columnName })
+        });
+
+        if (response.ok) {
+            loadBoard();
+        } else {
+            alert('Error al añadir columna');
+        }
     }
 }
 
 function openTaskModal() {
     document.getElementById("task-title").value = currentTask ? currentTask.querySelector(".task-title").textContent.trim() : "";
     document.getElementById("task-description").value = currentTask ? currentTask.querySelector(".task-description").textContent.trim() : "";
-    document.getElementById("task-assignees").value = currentTask ? currentTask.querySelector(".assignees").textContent.trim() : "";
     document.getElementById("task-urgency").value = currentTask ? currentTask.className.split(" ").find(c => c.startsWith("label-")) : "label-yellow";
 
-    document.querySelector(".modal").style.display = "block";
+    const assigneesSelect = document.getElementById("task-assignees");
+    assigneesSelect.innerHTML = '';
+    for (const [memberId, memberName] of Object.entries(membersMap)) {
+        const option = document.createElement('option');
+        option.value = memberId;
+        option.textContent = memberName;
+        assigneesSelect.appendChild(option);
+    }
+
+    if (currentTask) {
+        const assigneesText = currentTask.querySelector(".assignees").textContent.trim();
+        const assigneesArray = assigneesText ? assigneesText.split(',').map(s => s.trim()) : [];
+        assigneesArray.forEach(assignee => {
+            for (let option of assigneesSelect.options) {
+                if (option.textContent === assignee) {
+                    option.selected = true;
+                }
+            }
+        });
+    }
+
+    document.getElementById('taskModal').style.display = "block";
     document.querySelector(".overlay").style.display = "block";
 }
 
-function saveTask() {
+async function saveTask() {
     const taskTitle = document.getElementById("task-title").value;
     const taskDescription = document.getElementById("task-description").value;
-    const assignees = document.getElementById("task-assignees").value.split(',').map(a => a.trim()).filter(a => a);
+    const assigneesSelect = document.getElementById("task-assignees");
+    const assignees = Array.from(assigneesSelect.selectedOptions).map(option => option.value);
     const urgency = document.getElementById("task-urgency").value;
 
     if (!taskTitle) {
@@ -103,10 +248,51 @@ function saveTask() {
         return;
     }
 
-    // Save task to server
-    // Then reload the board
+    if (isCreatingNewTask) {
+        const columnId = targetColumn.dataset.columnId;
+        const response = await fetch(`/api/projects/${projectId}/kanban/columns/${columnId}/tasks`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token
+            },
+            body: JSON.stringify({
+                title: taskTitle,
+                description: taskDescription,
+                assignees,
+                label: urgency
+            })
+        });
 
-    closeTaskModal();
+        if (response.ok) {
+            loadBoard();
+        } else {
+            alert('Error al añadir tarea');
+        }
+    } else if (currentTask) {
+        const taskId = currentTask.dataset.taskId;
+        const response = await fetch(`/api/projects/${projectId}/kanban/tasks/${taskId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token
+            },
+            body: JSON.stringify({
+                title: taskTitle,
+                description: taskDescription,
+                assignees,
+                label: urgency
+            })
+        });
+
+        if (response.ok) {
+            loadBoard();
+        } else {
+            alert('Error al actualizar tarea');
+        }
+    }
+
+    closeModal('taskModal');
 }
 
 function openEditModal(button) {
@@ -115,32 +301,59 @@ function openEditModal(button) {
     openTaskModal();
 }
 
-function confirmDeleteTask(event, button) {
+async function confirmDeleteTask(event, button) {
     event.stopPropagation();
     const confirmed = confirm("¿Estás seguro que deseas eliminar esta tarea?");
     if (confirmed) {
-        // Delete task from server
-        // Then reload the board
+        const taskId = button.parentNode.dataset.taskId;
+        const response = await fetch(`/api/projects/${projectId}/kanban/tasks/${taskId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': token
+            }
+        });
+
+        if (response.ok) {
+            loadBoard();
+        } else {
+            alert('Error al eliminar tarea');
+        }
     }
 }
 
-function confirmDeleteColumn(button) {
+async function confirmDeleteColumn(button) {
     const confirmed = confirm("¿Estás seguro que deseas eliminar toda esta columna y sus tareas?");
     if (confirmed) {
-        // Delete column from server
-        // Then reload the board
+        const columnId = button.parentNode.dataset.columnId;
+        const response = await fetch(`/api/projects/${projectId}/kanban/columns/${columnId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': token
+            }
+        });
+
+        if (response.ok) {
+            loadBoard();
+        } else {
+            alert('Error al eliminar columna');
+        }
     }
 }
 
-function closeTaskModal() {
-    document.querySelector(".modal").style.display = "none";
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = "none";
     document.querySelector(".overlay").style.display = "none";
     currentTask = null;
     isCreatingNewTask = false;
     targetColumn = null;
 }
 
-document.querySelector(".overlay").addEventListener("click", closeTaskModal);
+document.querySelector(".overlay").addEventListener("click", () => {
+    closeModal('taskModal');
+    closeModal('membersModal');
+    closeModal('settingsModal');
+    closeModal('deadlineModal');
+});
 
 function allowDrop(event) {
     event.preventDefault();
@@ -148,15 +361,124 @@ function allowDrop(event) {
 
 function drag(event) {
     const taskId = event.target.getAttribute("data-task-id");
-    event.dataTransfer.setData("text/plain", event.target.outerHTML);
-    event.dataTransfer.setData("task-id", taskId);
+    event.dataTransfer.setData("text/plain", taskId);
 }
 
-function drop(event) {
+async function drop(event) {
     event.preventDefault();
     const targetElement = event.target.closest(".column");
     if (targetElement) {
-        // Update task's column on server
-        // Then reload the board
+        const taskId = event.dataTransfer.getData("text/plain");
+        const targetColumnId = targetElement.dataset.columnId;
+
+        const response = await fetch(`/api/projects/${projectId}/kanban/tasks/${taskId}/move`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token
+            },
+            body: JSON.stringify({ targetColumnId })
+        });
+
+        if (response.ok) {
+            loadBoard();
+        } else {
+            alert('Error al mover tarea');
+        }
     }
 }
+
+function openMembersModal() {
+    document.getElementById('membersModal').style.display = "block";
+    document.querySelector(".overlay").style.display = "block";
+}
+
+function openSettingsModal() {
+    document.getElementById('settingsModal').style.display = "block";
+    document.querySelector(".overlay").style.display = "block";
+}
+
+function openDeadlineModal() {
+    document.getElementById('deadlineModal').style.display = "block";
+    document.querySelector(".overlay").style.display = "block";
+}
+
+async function logout() {
+    const confirmed = confirm("¿Estás seguro que deseas cerrar sesión?");
+    if (confirmed) {
+        localStorage.removeItem('token');
+        window.location.href = 'login.html';
+    }
+}
+
+document.getElementById('invitarBtn').addEventListener('click', async () => {
+    const email = document.getElementById('emailInvitar').value;
+    if (!email) {
+        alert('Por favor, ingresa un correo');
+        return;
+    }
+
+    const response = await fetch(`/api/projects/${projectId}/invite`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token
+        },
+        body: JSON.stringify({ email })
+    });
+
+    const resultado = await response.json();
+    if (response.ok) {
+        alert('Invitación enviada');
+        document.getElementById('emailInvitar').value = '';
+        loadInvitations();
+    } else {
+        alert(resultado.mensaje || 'Error al invitar miembro');
+    }
+});
+
+document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
+    const nombre = document.getElementById('projectName').value;
+    const descripcion = document.getElementById('projectDescription').value;
+
+    const response = await fetch(`/api/projects/${projectId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token
+        },
+        body: JSON.stringify({ nombre, descripcion })
+    });
+
+    if (response.ok) {
+        alert('Configuración guardada');
+        loadProjectDetails();
+        closeModal('settingsModal');
+    } else {
+        alert('Error al guardar configuración');
+    }
+});
+
+document.getElementById('saveDeadlineBtn').addEventListener('click', async () => {
+    const deadline = document.getElementById('deadline').value;
+    if (!deadline) {
+        alert('Por favor, selecciona una fecha.');
+        return;
+    }
+
+    const response = await fetch(`/api/projects/${projectId}/deadline`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token
+        },
+        body: JSON.stringify({ deadline })
+    });
+
+    if (response.ok) {
+        alert('Fecha límite guardada');
+        closeModal('deadlineModal');
+    } else {
+        alert('Error al guardar la fecha límite');
+    }
+});

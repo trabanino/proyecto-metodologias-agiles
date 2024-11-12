@@ -4,33 +4,30 @@
     <meta charset="UTF-8">
     <title>Tablero Kanban</title>
     <link rel="stylesheet" href="css/kanban.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-<header>
-    <nav>
-        <ul id="menulista">
-            <li><a href="dashboard.html">Inicio</a></li>
-            <li><a href="#">Más Información</a></li>
-            <li><a href="#">Conócenos</a></li>
-            <li><a href="#">Contacto</a></li>
-        </ul>
-    </nav>
+<header class="kanban-header">
+    <div class="header-left">
+        <h1 id="projectTitle"></h1>
+    </div>
+    <div class="header-right">
+        <button id="notificationsBtn"><i class="fas fa-bell"></i></button>
+        <button id="logoutBtn"><i class="fas fa-sign-out-alt"></i></button>
+    </div>
 </header>
 <aside class="sidebar">
-    <a href="#"><i class="fas fa-plus"></i></a>
-    <a href="#"><i class="fas fa-tasks"></i></a>
-    <a href="#"><i class="fas fa-check"></i></a>
-    <a href="#"><i class="fas fa-users"></i></a>
-    <a href="#"><i class="fas fa-user-plus"></i></a>
+    <a href="#" id="addColumnBtn"><i class="fas fa-plus"></i> Añadir Columna</a>
+    <a href="#" id="manageMembersBtn"><i class="fas fa-users"></i> Miembros</a>
+    <a href="#" id="projectSettingsBtn"><i class="fas fa-cog"></i> Configuración</a>
+    <a href="#" id="setDeadlineBtn"><i class="fas fa-calendar-alt"></i> Plazo</a>
 </aside>
-<h1>Tablero Kanban</h1>
-<div class="board">
-    <!-- Columns will be generated dynamically -->
+<div class="board-container">
+    <div class="board">
+    </div>
 </div>
-<button class="add-column-container" onclick="addNewColumn()">+ Añadir Estado</button>
-
 <div class="overlay"></div>
-<div class="modal">
+<div class="modal" id="taskModal">
     <h2>Tarea</h2>
     <input type="text" id="task-title" placeholder="Título de la tarea">
     <textarea id="task-description" placeholder="Descripción"></textarea>
@@ -39,8 +36,33 @@
         <option value="label-orange">Media</option>
         <option value="label-yellow">Baja</option>
     </select>
-    <input type="text" id="task-assignees" placeholder="Asignar a (separado por comas)">
+    <div id="assignees-container">
+        <label>Asignar a:</label>
+        <select id="task-assignees" multiple>
+        </select>
+    </div>
     <button onclick="saveTask()">Guardar</button>
+</div>
+<div class="modal" id="membersModal">
+    <h2>Miembros del Proyecto</h2>
+    <ul id="membersList"></ul>
+    <input type="email" id="emailInvitar" placeholder="Correo del miembro">
+    <button id="invitarBtn">Invitar</button>
+    <h3>Invitaciones Enviadas</h3>
+    <ul id="invitationsList"></ul>
+</div>
+<div class="modal" id="settingsModal">
+    <h2>Configuración del Proyecto</h2>
+    <label for="projectName">Nombre del Proyecto</label>
+    <input type="text" id="projectName">
+    <label for="projectDescription">Descripción</label>
+    <textarea id="projectDescription"></textarea>
+    <button id="saveSettingsBtn">Guardar Cambios</button>
+</div>
+<div class="modal" id="deadlineModal">
+    <h2>Establecer Plazo</h2>
+    <input type="date" id="deadline">
+    <button id="saveDeadlineBtn">Guardar Plazo</button>
 </div>
 <script src="scripts/kanban.js"></script>
 </body>
