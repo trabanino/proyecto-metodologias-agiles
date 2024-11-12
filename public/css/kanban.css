@@ -221,3 +221,59 @@ h1{
     margin-top: 20px;
 }
 
+/* Estilo para el botón "+ Añadir Estado" */
+.add-column-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 250px;
+    padding: 10px;
+    margin: 20px 0;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    background: linear-gradient(90deg, #4caf50, #2e7d32);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.3s ease, background 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.add-column-container:hover {
+    transform: scale(1.05);
+    background: linear-gradient(90deg, #388e3c, #1b5e20);
+}
+
+.add-column-container:active {
+    transform: scale(0.98);
+    background: linear-gradient(90deg, #2e7d32, #1b5e20);
+}
+
+/* Estilo para el botón "Generar Reporte de Avance" */
+button[onclick="generarReporte()"] {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    background: linear-gradient(90deg, #ff9800, #f57c00);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.3s ease, background 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    margin-top: 10px;
+}
+
+button[onclick="generarReporte()"]:hover {
+    transform: scale(1.05);
+    background: linear-gradient(90deg, #fb8c00, #e65100);
+}
+
+button[onclick="generarReporte()"]:active {
+    transform: scale(0.98);
+    background: linear-gradient(90deg, #e65100, #bf360c);
+}
+
+
