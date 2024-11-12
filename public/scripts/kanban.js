@@ -132,3 +132,114 @@ function drop(event) {
     }
 }
 
+
+
+
+
+
+//FUNCIONES PARA GENERAR REPORTES Y MOSTRAR A LOS STAKEHOLDERS
+function generarReporte() {
+    const columnas = document.querySelectorAll(".column");
+    const reporte = [];
+
+    // Recolectamos la información de las columnas y tareas
+    columnas.forEach((columna) => {
+        const estado = columna.querySelector("h2").textContent;
+        const tareas = columna.querySelectorAll(".task");
+
+        // Contamos las tareas por urgencia
+        let urgencias = { Alta: 0, Media: 0, Baja: 0 };
+
+        Array.from(tareas).forEach((tarea) => {
+            const urgencia = tarea.classList.contains("label-red")
+                ? "Alta"
+                : tarea.classList.contains("label-orange")
+                ? "Media"
+                : "Baja";
+
+            urgencias[urgencia]++;
+        });
+
+        reporte.push({ estado, urgencias });
+    });
+
+    // Generamos el gráfico
+    generarGrafico(reporte);
+}
+
+function generarGrafico(reporte) {
+    // Abrimos una nueva ventana para mostrar el reporte
+    const ventanaReporte = window.open("", "_blank", "width=800,height=600");
+    ventanaReporte.document.write("<h1>Reporte de Avance</h1>");
+
+    // Incluir Chart.js en la ventana emergente
+    ventanaReporte.document.write(`
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <canvas id="grafico" width="400" height="200"></canvas>
+    `);
+
+    // Esperamos que el documento cargue antes de crear el gráfico
+    ventanaReporte.document.write(`
+        <script>
+            window.onload = function() {
+                const ctx = document.getElementById('grafico').getContext('2d');
+
+                // Creamos los datos para el gráfico
+                const datos = {
+                    labels: ${JSON.stringify(reporte.map((columna) => columna.estado))}, // Etiquetas con los estados
+                    datasets: [
+                        {
+                            label: 'Alta',
+                            data: ${JSON.stringify(reporte.map((columna) => columna.urgencias.Alta))}, // Datos para las "Altas"
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Media',
+                            data: ${JSON.stringify(reporte.map((columna) => columna.urgencias.Media))}, // Datos para las "Medias"
+                            backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Baja',
+                            data: ${JSON.stringify(reporte.map((columna) => columna.urgencias.Baja))}, // Datos para las "Bajas"
+                            backgroundColor: 'rgba(255, 205, 86, 0.2)',
+                            borderColor: 'rgba(255, 205, 86, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                };
+
+                // Creamos el gráfico de barras
+                const myChart = new Chart(ctx, {
+                    type: 'bar', // Tipo de gráfico (barras)
+                    data: datos,
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(tooltipItem) {
+                                        return tooltipItem.dataset.label + ': ' + tooltipItem.raw + ' tareas';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        </script>
+    `);
+
+    ventanaReporte.document.close();
+}
