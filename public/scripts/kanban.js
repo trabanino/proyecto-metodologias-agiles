@@ -4,6 +4,7 @@ let targetColumn = null;
 const urlParams = new URLSearchParams(window.location.search);
 const projectId = urlParams.get('projectId');
 const token = localStorage.getItem('token');
+let projectMembers = [];
 
 if (!token) {
     window.location.href = '/login';
@@ -22,6 +23,22 @@ async function loadKanbanBoard() {
         }
         const project = await projectResponse.json();
         document.getElementById('projectName').textContent = project.nombre;
+
+        // Load project members
+        projectMembers = [];
+        for (const miembroId of project.miembros) {
+            const usuarioResponse = await fetch(`/api/users/${miembroId}`, {
+                headers: {
+                    'Authorization': token
+                }
+            });
+            if (!usuarioResponse.ok) {
+                console.error('Error fetching user:', miembroId);
+                continue;
+            }
+            const usuario = await usuarioResponse.json();
+            projectMembers.push({ id: usuario._id, nombre: usuario.nombre });
+        }
 
         const tasksResponse = await fetch(`/api/projects/${projectId}/tasks`, {
             headers: {
@@ -66,10 +83,16 @@ function renderKanbanBoard(tasks, columns) {
             task.draggable = true;
             task.setAttribute('ondragstart', 'drag(event)');
             task.setAttribute('data-task-id', taskData._id);
+            task.setAttribute('data-task-notes', taskData.notes || '');
+            task.setAttribute('data-assignees', taskData.assignees ? taskData.assignees.join(',') : '');
+            const assigneeNames = projectMembers
+                .filter(member => taskData.assignees.includes(member.id))
+                .map(member => member.nombre);
+
             task.innerHTML = `
                 <div class="task-title">${taskData.title}</div>
                 <div class="task-description">${taskData.description}</div>
-                <div class="assignees">${taskData.assignees ? 'Asignado a: ' + taskData.assignees.join(', ') : ''}</div>
+                <div class="assignees">${assigneeNames.length > 0 ? 'Asignado a: ' + assigneeNames.join(', ') : ''}</div>
                 <button class="edit-task" onclick="openEditModal(this)">✏️</button>
                 <button class="delete-task" onclick="confirmDeleteTask(event, this)">X</button>
             `;
@@ -93,8 +116,29 @@ function openTaskModal(column) {
     targetColumn = column || targetColumn;
     document.getElementById("task-title").value = currentTask ? currentTask.querySelector(".task-title").textContent.trim() : "";
     document.getElementById("task-description").value = currentTask ? currentTask.querySelector(".task-description").textContent.trim() : "";
-    document.getElementById("task-assignees").value = currentTask ? currentTask.querySelector(".assignees").textContent.replace("Asignado a: ", "").trim() : "";
-    document.getElementById("task-urgency").value = currentTask ? currentTask.className.split(" ").find(c => c.startsWith("label-")) : "label-yellow";
+    document.getElementById("task-notes").value = currentTask ? currentTask.getAttribute('data-task-notes') || '' : '';
+
+    const urgencyClass = currentTask ? currentTask.className.split(" ").find(c => c.startsWith("label-")) : "label-yellow";
+    document.getElementById("task-urgency").value = urgencyClass;
+
+    // Populate assignees select
+    const assigneesSelect = document.getElementById("task-assignees");
+    assigneesSelect.innerHTML = '';
+    projectMembers.forEach(member => {
+        const option = document.createElement('option');
+        option.value = member.id;
+        option.textContent = member.nombre;
+        assigneesSelect.appendChild(option);
+    });
+
+    if (currentTask) {
+        const assignedMemberIds = currentTask.getAttribute('data-assignees').split(',');
+        for (let option of assigneesSelect.options) {
+            if (assignedMemberIds.includes(option.value)) {
+                option.selected = true;
+            }
+        }
+    }
 
     document.getElementById("taskModal").style.display = "block";
     document.querySelector(".overlay").style.display = "block";
@@ -111,6 +155,7 @@ function closeTaskModal() {
 document.querySelector(".overlay").addEventListener("click", () => {
     closeTaskModal();
     closeMembersModal();
+    closeAddColumnModal();
 });
 
 function openEditModal(button) {
@@ -123,7 +168,9 @@ function openEditModal(button) {
 async function saveTask() {
     const taskTitle = document.getElementById("task-title").value;
     const taskDescription = document.getElementById("task-description").value;
-    const assignees = document.getElementById("task-assignees").value.split(',').map(a => a.trim()).filter(a => a);
+    const taskNotes = document.getElementById("task-notes").value;
+    const assigneesSelect = document.getElementById("task-assignees");
+    const assignees = Array.from(assigneesSelect.selectedOptions).map(option => option.value);
     const urgency = document.getElementById("task-urgency").value;
     const status = targetColumn.querySelector('h2').textContent;
 
@@ -135,6 +182,7 @@ async function saveTask() {
     const taskData = {
         title: taskTitle,
         description: taskDescription,
+        notes: taskNotes,
         assignees,
         urgency,
         status,
@@ -179,8 +227,18 @@ async function saveTask() {
     }
 }
 
+function openAddColumnModal() {
+    document.getElementById("addColumnModal").style.display = "block";
+    document.querySelector(".overlay").style.display = "block";
+}
+
+function closeAddColumnModal() {
+    document.getElementById("addColumnModal").style.display = "none";
+    document.querySelector(".overlay").style.display = "none";
+}
+
 async function addNewColumn() {
-    const columnName = prompt("Ingrese el nombre del nuevo estado:");
+    const columnName = document.getElementById("column-name").value;
     if (columnName) {
         try {
             const response = await fetch(`/api/projects/${projectId}/columns`, {
@@ -196,10 +254,14 @@ async function addNewColumn() {
                 return;
             }
             loadKanbanBoard();
+            closeAddColumnModal();
+            document.getElementById("column-name").value = '';
         } catch (error) {
             console.error('Error:', error);
             alert('Error al añadir la columna');
         }
+    } else {
+        alert('Por favor, ingrese un nombre para el estado');
     }
 }
 

@@ -13,6 +13,7 @@
         <button class="add-btn" onclick="addTaskFromSidebar()"><i class="fas fa-plus"></i></button>
         <nav>
             <ul>
+                <li><button onclick="openAddColumnModal()"><i class="fas fa-columns"></i></button></li>
                 <li><button onclick="openMembersModal()"><i class="fas fa-users"></i></button></li>
                 <li><button onclick="openNotifications()"><i class="fas fa-bell"></i></button></li>
                 <li><button onclick="goBack()"><i class="fas fa-arrow-left"></i></button></li>
@@ -26,9 +27,6 @@
         </header>
 
         <div class="board">
-        </div>
-        <div class="add-column-container">
-            <button class="add-column" onclick="addNewColumn()">+ Añadir Estado</button>
         </div>
     </main>
 </div>
@@ -44,8 +42,23 @@
         <option value="label-orange">Media</option>
         <option value="label-yellow">Baja</option>
     </select>
-    <input type="text" id="task-assignees" placeholder="Asignar a (separado por comas)">
+    <div>
+        <label for="task-assignees">Asignar a:</label>
+        <select id="task-assignees" multiple>
+            <!-- Project members will be populated here -->
+        </select>
+    </div>
+    <div>
+        <label for="task-notes">Notas:</label>
+        <textarea id="task-notes" placeholder="Agregar notas"></textarea>
+    </div>
     <button onclick="saveTask()">Guardar</button>
+</div>
+
+<div class="modal" id="addColumnModal">
+    <h2>Agregar Estado</h2>
+    <input type="text" id="column-name" placeholder="Nombre del estado">
+    <button onclick="addNewColumn()">Agregar</button>
 </div>
 
 <div class="modal" id="membersModal">
