@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vista General de Sprints</title>
+  <link rel="stylesheet" href="css/add_sprint.css">
+</head>
+<body>
+<div class="container">
+  <header class="header">
+    <h1>Vista General de Sprints</h1>
+    <button class="add-sprint-btn">+ Añadir Sprint</button>
+  </header>
+  <div class="sprints-container">
+    <!-- Los sprints se renderizan dinámicamente -->
+  </div>
+</div>
+
+<!-- Modal para editar/agregar sprints -->
+<div id="edit-modal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn">&times;</span>
+    <h2>Editar Sprint</h2>
+    <label for="sprint-name">Nombre del Sprint:</label>
+    <input type="text" id="sprint-name" placeholder="Nombre del Sprint">
+    <label for="start-date">Fecha Inicio:</label>
+    <input type="date" id="start-date">
+    <label for="end-date">Fecha Fin:</label>
+    <input type="date" id="end-date">
+    <label for="status">Estado:</label>
+    <select id="status">
+      <option value="not-started">Not Started</option>
+      <option value="in-progress">In Progress</option>
+      <option value="completed">Completed</option>
+    </select>
+    <button class="save-btn">Guardar</button>
+  </div>
+</div>
+
+<script src="scripts/add_sprint.js"></script>
+</body>
+</html>

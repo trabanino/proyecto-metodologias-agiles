@@ -274,11 +274,11 @@ h1 {
 }
 
 .story-status.incomplete {
-    background-color: darkgray; 
+    background-color: darkgray;
 }
 
 .story-status.completed {
-    background-color: #27ae60; 
+    background-color: #27ae60;
 }
 
 .story-status:hover {

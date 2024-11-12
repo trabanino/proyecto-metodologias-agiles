@@ -1,411 +1,161 @@
-let currentUserStory = null;
-let isCreatingNewUserStory = false;
-let targetSprint = null;
-const token = localStorage.getItem('token');
-let projectMembers = [];
-let isOwner = false;
+// Variables globales
+let token;
+let projectId;
 
-if (!token) {
-    window.location.href = '/login';
-}
-
-// Extract projectId from the URL path
-const projectId = window.location.pathname.split('/').pop();
-
-async function loadProjectView() {
-    try {
-        const projectResponse = await fetch(`/api/projects/${projectId}`, {
-            headers: {
-                'Authorization': token
-            }
-        });
-        if (!projectResponse.ok) {
-            alert('Error al obtener detalles del proyecto');
-            return;
-        }
-        const project = await projectResponse.json();
-        document.getElementById('projectName').textContent = project.nombre;
-
-        // Check if the user is the owner
-        const userId = parseJwt(token).id;
-        isOwner = project.owner === userId;
-
-        // Show delete project button if owner
-        if (isOwner) {
-            document.getElementById('deleteProjectBtn').style.display = 'block';
-        }
-
-        // Load project members
-        projectMembers = [];
-        for (const miembroId of project.miembros) {
-            const usuarioResponse = await fetch(`/api/users/${miembroId}`, {
-                headers: {
-                    'Authorization': token
-                }
-            });
-            if (!usuarioResponse.ok) {
-                console.error('Error fetching user:', miembroId);
-                continue;
-            }
-            const usuario = await usuarioResponse.json();
-            projectMembers.push({ id: usuario._id, nombre: usuario.nombre });
-        }
-
-        // Load sprints
-        const sprintsResponse = await fetch(`/api/projects/${projectId}/sprints`, {
-            headers: {
-                'Authorization': token
-            }
-        });
-        if (!sprintsResponse.ok) {
-            alert('Error al obtener sprints del proyecto');
-            return;
-        }
-        const sprints = await sprintsResponse.json();
-
-        renderSprints(sprints);
-
-        // Load notifications
-        loadNotifications();
-
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error al cargar la vista del proyecto');
-    }
-}
-
-function renderSprints(sprints) {
-    const sprintsContainer = document.querySelector('.sprints');
-    sprintsContainer.innerHTML = '';
-
-    sprints.forEach(sprint => {
-        const sprintElement = document.createElement('div');
-        sprintElement.className = 'sprint';
-
-        sprintElement.innerHTML = `
-            <h2>${sprint.name}</h2>
-            <p>Inicio: ${new Date(sprint.startDate).toLocaleDateString()}</p>
-            <p>Fin: ${new Date(sprint.endDate).toLocaleDateString()}</p>
-            <button class="add-user-story" onclick="addUserStory(this, '${sprint._id}')">+ Añadir User Story</button>
-        `;
-
-        const userStoriesContainer = document.createElement('div');
-        userStoriesContainer.className = 'user-stories';
-
-        sprint.userStories.forEach(userStory => {
-            const userStoryElement = document.createElement('div');
-            userStoryElement.className = 'user-story';
-            userStoryElement.setAttribute('data-user-story-id', userStory._id);
-            userStoryElement.innerHTML = `
-                <h3>${userStory.title}</h3>
-                <p>${userStory.description}</p>
-                <p>Prioridad: ${userStory.priority}</p>
-                <button class="edit-user-story" onclick="openEditUserStoryModal('${sprint._id}', '${userStory._id}')">✏️</button>
-                <button class="delete-user-story" onclick="confirmDeleteUserStory('${sprint._id}', '${userStory._id}')">🗑️</button>
-            `;
-            userStoriesContainer.appendChild(userStoryElement);
-        });
-
-        sprintElement.appendChild(userStoriesContainer);
-        sprintsContainer.appendChild(sprintElement);
-    });
-}
-
-loadProjectView();
-
-function openAddSprintModal() {
-    document.getElementById("addSprintModal").style.display = "block";
-    document.querySelector(".overlay").style.display = "block";
-}
-
-function closeAddSprintModal() {
-    document.getElementById("addSprintModal").style.display = "none";
-    document.querySelector(".overlay").style.display = "none";
-}
-
-async function addNewSprint() {
-    const name = document.getElementById("sprint-name").value;
-    const startDate = document.getElementById("sprint-start-date").value;
-    const endDate = document.getElementById("sprint-end-date").value;
-
-    if (!name || !startDate || !endDate) {
-        alert('Todos los campos son obligatorios');
-        return;
+document.addEventListener('DOMContentLoaded', async () => {
+    token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '/login';
     }
 
-    try {
-        const response = await fetch(`/api/projects/${projectId}/sprints`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': token
-            },
-            body: JSON.stringify({ name, startDate, endDate })
-        });
-        if (!response.ok) {
-            alert('Error al añadir el sprint');
-            return;
-        }
-        loadProjectView();
-        closeAddSprintModal();
-        document.getElementById("sprint-name").value = '';
-        document.getElementById("sprint-start-date").value = '';
-        document.getElementById("sprint-end-date").value = '';
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error al añadir el sprint');
-    }
-}
+    projectId = window.location.pathname.split('/').pop();
 
-function addUserStory(button, sprintId) {
-    isCreatingNewUserStory = true;
-    currentUserStory = null;
-    targetSprint = sprintId;
-    openUserStoryModal();
-}
+    const projectTitle = document.getElementById('projectTitle');
+    const projectDescription = document.getElementById('projectDescription');
 
-function openUserStoryModal() {
-    // Set default values
-    document.getElementById("user-story-title").value = currentUserStory ? currentUserStory.title : "";
-    document.getElementById("user-story-description").value = currentUserStory ? currentUserStory.description : "";
-    document.getElementById("user-story-priority").value = currentUserStory ? currentUserStory.priority : "media";
-
-    // Populate assignees select
-    const assigneesSelect = document.getElementById("user-story-assignees");
-    assigneesSelect.innerHTML = '';
-    projectMembers.forEach(member => {
-        const option = document.createElement('option');
-        option.value = member.id;
-        option.textContent = member.nombre;
-        assigneesSelect.appendChild(option);
-    });
-
-    if (currentUserStory) {
-        const assignedMemberIds = currentUserStory.assignees || [];
-        for (let option of assigneesSelect.options) {
-            if (assignedMemberIds.includes(option.value)) {
-                option.selected = true;
-            }
-        }
-    }
-
-    document.getElementById("addUserStoryModal").style.display = "block";
-    document.querySelector(".overlay").style.display = "block";
-}
-
-function closeUserStoryModal() {
-    document.getElementById("addUserStoryModal").style.display = "none";
-    document.querySelector(".overlay").style.display = "none";
-    currentUserStory = null;
-    isCreatingNewUserStory = false;
-    targetSprint = null;
-}
-
-async function saveUserStory() {
-    const title = document.getElementById("user-story-title").value;
-    const description = document.getElementById("user-story-description").value;
-    const priority = document.getElementById("user-story-priority").value;
-    const assigneesSelect = document.getElementById("user-story-assignees");
-    const assignees = Array.from(assigneesSelect.selectedOptions).map(option => option.value);
-
-    if (!title || !description) {
-        alert('El título y la descripción son obligatorios');
-        return;
-    }
-
-    const userStoryData = {
-        title,
-        description,
-        priority,
-        assignees
-    };
-
-    try {
-        if (isCreatingNewUserStory) {
-            const response = await fetch(`/api/projects/${projectId}/sprints/${targetSprint}/userstories`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': token
-                },
-                body: JSON.stringify(userStoryData)
-            });
-            if (!response.ok) {
-                alert('Error al crear la User Story');
-                return;
-            }
-            loadProjectView();
-        } else if (currentUserStory) {
-            const response = await fetch(`/api/projects/${projectId}/sprints/${targetSprint}/userstories/${currentUserStory._id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': token
-                },
-                body: JSON.stringify(userStoryData)
-            });
-            if (!response.ok) {
-                alert('Error al actualizar la User Story');
-                return;
-            }
-            loadProjectView();
-        }
-        closeUserStoryModal();
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error al guardar la User Story');
-    }
-}
-
-async function openEditUserStoryModal(sprintId, userStoryId) {
-    targetSprint = sprintId;
-    try {
-        const response = await fetch(`/api/projects/${projectId}/sprints/${sprintId}/userstories/${userStoryId}`, {
-            headers: {
-                'Authorization': token
-            }
-        });
-        if (!response.ok) {
-            alert('Error al obtener la User Story');
-            return;
-        }
-        currentUserStory = await response.json();
-        isCreatingNewUserStory = false;
-        openUserStoryModal();
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error al cargar la User Story');
-    }
-}
-
-async function confirmDeleteUserStory(sprintId, userStoryId) {
-    const confirmed = confirm("¿Estás seguro que deseas eliminar esta User Story?");
-    if (confirmed) {
-        try {
-            const response = await fetch(`/api/projects/${projectId}/sprints/${sprintId}/userstories/${userStoryId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': token
-                }
-            });
-            if (!response.ok) {
-                alert('Error al eliminar la User Story');
-                return;
-            }
-            loadProjectView();
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error al eliminar la User Story');
-        }
-    }
-}
-
-function goBack() {
-    window.location.href = '/dashboard';
-}
-
-function toggleNotifications() {
-    const notificationsModal = document.getElementById('notificationsModal');
-    if (notificationsModal.style.display === 'block') {
-        closeNotificationsModal();
-    } else {
-        openNotificationsModal();
-    }
-}
-
-function openNotificationsModal() {
-    document.getElementById('notificationsModal').style.display = 'block';
-    document.querySelector('.overlay').style.display = 'block';
-}
-
-function closeNotificationsModal() {
-    document.getElementById('notificationsModal').style.display = 'none';
-    document.querySelector('.overlay').style.display = 'none';
-}
-
-async function loadNotifications() {
-    try {
-        const response = await fetch('/api/notifications', {
-            headers: {
-                'Authorization': token
-            }
-        });
-        if (!response.ok) {
-            console.error('Error fetching notifications');
-            return;
-        }
-        const notifications = await response.json();
-        const notificationsList = document.getElementById('notificationsList');
-        notificationsList.innerHTML = '';
-        notifications.forEach(notification => {
-            const li = document.createElement('li');
-            li.textContent = notification.message;
-            notificationsList.appendChild(li);
-        });
-        const notificationCount = document.getElementById('notificationCount');
-        notificationCount.textContent = notifications.length > 0 ? notifications.length : '';
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
-
-function openMembersModal() {
-    document.getElementById('membersModal').style.display = 'block';
-    document.querySelector('.overlay').style.display = 'block';
-    loadMembers();
-}
-
-function closeMembersModal() {
-    document.getElementById('membersModal').style.display = 'none';
-    document.querySelector('.overlay').style.display = 'none';
-}
-
-async function loadMembers() {
-    const miembrosList = document.getElementById('miembrosList');
-    miembrosList.innerHTML = '';
-    try {
+    // obtener detalles del proyecto
+    async function loadProjectDetails() {
         const response = await fetch(`/api/projects/${projectId}`, {
             headers: {
                 'Authorization': token
             }
         });
-        if (!response.ok) {
-            alert('Error al obtener detalles del proyecto');
+
+        if (response.status === 403) {
+            alert('no tienes acceso a este proyecto');
+            window.location.href = '/dashboard';
             return;
         }
+
         const project = await response.json();
+
+        projectTitle.textContent = project.nombre;
+        projectDescription.textContent = project.descripcion;
+    }
+
+    loadProjectDetails();
+
+    // Añadir evento al botón "Regresar"
+    const backBtn = document.getElementById('backBtn');
+
+    backBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.history.back();
+    });
+
+    // añadir funcionalidad a los botones del menú
+    const addSprintBtn = document.getElementById('addSprintBtn');
+    const sprintsBtn = document.getElementById('sprintsBtn');
+    const reportsBtn = document.getElementById('reportsBtn');
+    const miembrosBtn = document.getElementById('miembrosBtn');
+    const plazos = document.getElementById('plazBtn');
+
+
+    addSprintBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        // lógica para añadir un spr
+        window.location.href = `/add_sprint.html?projectId=${projectId}`;
+    });
+
+    sprintsBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        // navegar a la página de sprints
+        window.location.href = `/sprint_view.html?projectId=${projectId}`;
+    });
+
+    // Obtener elementos del DOM para la sección de miembros
+    const miembrosSection = document.getElementById('miembrosSection');
+    const projectMenu = document.getElementById('projectMenu');
+    const miembrosList = document.getElementById('miembrosList');
+    const emailInvitar = document.getElementById('emailInvitar');
+    const invitarBtn = document.getElementById('invitarBtn');
+    const volverMenuBtn = document.getElementById('volverMenuBtn');
+
+    miembrosBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        projectMenu.style.display = 'none';
+        miembrosSection.style.display = 'block';
+        cargarMiembros();
+
+        // Remover la clase 'active' de todos los enlaces del menú
+        document.querySelectorAll('.project-menu ul li a').forEach(link => {
+            link.classList.remove('active');
+        });
+
+        // Agregar la clase 'active' al enlace de miembros
+        miembrosBtn.classList.add('active');
+    });
+
+    // Listener para el botón "Regresar al Menú"
+    volverMenuBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        miembrosSection.style.display = 'none';
+        projectMenu.style.display = 'block';
+
+        // Remover la clase 'active' del enlace de miembros
+        miembrosBtn.classList.remove('active');
+    });
+
+    // Función para cargar miembros del proyecto
+    async function cargarMiembros() {
+        const response = await fetch(`/api/projects/${projectId}`, {
+            headers: {
+                'Authorization': token
+            }
+        });
+
+        if (!response.ok) {
+            console.error('Error fetching project:', response.statusText);
+            return;
+        }
+
+        const project = await response.json();
+
+        miembrosList.innerHTML = '';
         for (const miembroId of project.miembros) {
-            const usuarioResponse = await fetch(`/api/users/${miembroId}`, {
+            const miembroIdStr = miembroId.toString();
+
+            const usuarioResponse = await fetch(`/api/users/${miembroIdStr}`, {
                 headers: {
                     'Authorization': token
                 }
             });
+
             if (!usuarioResponse.ok) {
-                console.error('Error fetching user:', miembroId);
-                continue;
+                console.error(`Error fetching user ${miembroIdStr}:`, usuarioResponse.status, usuarioResponse.statusText);
+                continue; // saltar al siguiente miembro
             }
+
             const usuario = await usuarioResponse.json();
+
             const li = document.createElement('li');
-            li.textContent = `${usuario.nombre} (${usuario.correo})`;
-            if (project.owner === miembroId) {
-                li.textContent += ' (Propietario)';
-            }
+            li.innerHTML = `<span>${usuario.nombre} (${usuario.correo})</span>`;
+
+            // Botón para eliminar miembro
+            const eliminarBtn = document.createElement('button');
+            eliminarBtn.textContent = 'Eliminar';
+            eliminarBtn.addEventListener('click', () => eliminarMiembro(miembroIdStr));
+
+            // Botón para asignar rol
+            const esAdmin = project.admins && project.admins.includes(miembroIdStr);
+            const rolBtn = document.createElement('button');
+            rolBtn.textContent = esAdmin ? 'Quitar Admin' : 'Hacer Admin';
+            rolBtn.addEventListener('click', () => asignarRol(miembroIdStr, esAdmin ? 'miembro' : 'admin'));
+
+            li.appendChild(eliminarBtn);
+            li.appendChild(rolBtn);
             miembrosList.appendChild(li);
         }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error al cargar los miembros del proyecto');
-    }
-}
-
-document.getElementById('invitarBtn').addEventListener('click', async () => {
-    const email = document.getElementById('emailInvitar').value;
-    if (!email) {
-        alert('Por favor, ingresa un correo');
-        return;
     }
 
-    try {
+    // Función para invitar miembro
+    invitarBtn.addEventListener('click', async () => {
+        const email = emailInvitar.value;
+        if (!email) {
+            alert('Por favor, ingresa un correo');
+            return;
+        }
+
         const response = await fetch(`/api/projects/${projectId}/invite`, {
             method: 'POST',
             headers: {
@@ -418,60 +168,243 @@ document.getElementById('invitarBtn').addEventListener('click', async () => {
         const resultado = await response.json();
         if (response.ok) {
             alert('Invitación enviada');
-            document.getElementById('emailInvitar').value = '';
-            loadMembers();
+            emailInvitar.value = '';
         } else {
             alert(resultado.mensaje || 'Error al invitar miembro');
         }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error al invitar miembro');
-    }
-});
+    });
 
-function confirmDeleteProject() {
-    const projectName = document.getElementById('projectName').textContent;
-    const inputName = prompt(`Para confirmar, por favor ingresa el nombre del proyecto: "${projectName}"`);
-    if (inputName === projectName) {
-        deleteProject();
-    } else {
-        alert('El nombre ingresado no coincide. Operación cancelada.');
-    }
-}
+    // Función para eliminar miembro
+    async function eliminarMiembro(miembroId) {
+        const confirmar = confirm('¿Estás seguro de eliminar este miembro?');
+        if (!confirmar) return;
 
-async function deleteProject() {
-    try {
-        const response = await fetch(`/api/projects/${projectId}`, {
+        const response = await fetch(`/api/projects/${projectId}/members/${miembroId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': token
             }
         });
-        if (!response.ok) {
-            alert('Error al eliminar el proyecto');
+
+        const resultado = await response.json();
+        if (response.ok) {
+            alert('Miembro eliminado');
+            cargarMiembros();
+        } else {
+            alert(resultado.mensaje || 'Error al eliminar miembro');
+        }
+    }
+
+    // Función para asignar rol
+    async function asignarRol(miembroId, rol) {
+        const response = await fetch(`/api/projects/${projectId}/members/${miembroId}/role`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token
+            },
+            body: JSON.stringify({ role: rol })
+        });
+
+        const resultado = await response.json();
+        if (response.ok) {
+            alert('Rol actualizado');
+            cargarMiembros();
+        } else {
+            alert(resultado.mensaje || 'Error al actualizar rol');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login';
             return;
         }
-        alert('Proyecto eliminado exitosamente');
-        window.location.href = '/dashboard';
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error al eliminar el proyecto');
-    }
-}
 
-function parseJwt(token) {
-    try {
-        const base64Payload = token.split('.')[1];
-        const payload = atob(base64Payload);
-        return JSON.parse(payload);
-    } catch (e) {
-        return null;
-    }
-}
+        const projectId = window.location.pathname.split('/').pop();
 
-document.querySelector(".overlay").addEventListener("click", () => {
-    closeAddSprintModal();
-    closeUserStoryModal();
-    closeMembersModal();
-    closeNotificationsModal();
+        const projectTitle = document.getElementById('projectTitle');
+        const projectDescription = document.getElementById('projectDescription');
+
+        // Obtener detalles del proyecto
+        async function loadProjectDetails() {
+            try {
+                const response = await fetch(`/api/projects/${projectId}`, {
+                    headers: {
+                        'Authorization': token
+                    }
+                });
+
+                if (response.status === 403) {
+                    alert('No tienes acceso a este proyecto');
+                    window.location.href = '/dashboard';
+                    return;
+                }
+
+                if (!response.ok) {
+                    alert('Error al obtener los detalles del proyecto');
+                    return;
+                }
+
+                const project = await response.json();
+
+                projectTitle.textContent = project.nombre;
+                projectDescription.textContent = project.descripcion;
+            } catch (error) {
+                console.error('Error al cargar los detalles del proyecto:', error);
+                alert('Error al cargar los detalles del proyecto');
+            }
+        }
+
+        loadProjectDetails();
+
+        // Añadir funcionalidad a los botones del menú
+        const addSprintBtn = document.getElementById('addSprintBtn');
+        const sprintsBtn = document.getElementById('sprintsBtn');
+        const reportsBtn = document.getElementById('reportsBtn');
+        const kanbanBtn = document.getElementById('kanbanBtn');
+
+        addSprintBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Lógica para añadir un sprint
+            alert('PENDIENTE: añadir sprint no implementada todavía');
+        });
+
+        sprintsBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Navegar a la página de sprints
+            window.location.href = `/sprint_view.html?projectId=${projectId}`;
+        });
+
+        reportsBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Navegar a la página de reportes
+            alert('PENDIENTE: ver reportes no implementada todavía');
+        });
+
+        kanbanBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Navegar a la página de Kanban con el ID del proyecto
+            window.location.href = `/kanban.html?projectId=${projectId}`;
+        });
+
+
+
+
+    });
+
+    plazos.addEventListener('click', (e) => {
+        e.preventDefault();
+        //Funcion de plazos
+
+        const plazBtn = document.getElementById('plazBtn');
+        const modal = document.getElementById('deadlineModal');
+        const closeBtn = document.querySelector('.close');
+        const deadlineForm = document.getElementById('deadlineForm');
+        const deadlineDisplay = document.getElementById('deadlineDisplay');
+
+        // Store deadline data
+        let projectDeadline = {
+            projectName: '',
+            deadline: null
+        };
+
+        // Modal control functions
+        plazBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            modal.style.display = 'block';
+        });
+
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Form submission handler
+        deadlineForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            // Get form values
+            const projectName = document.getElementById('projectName').value;
+            const deadlineDate = document.getElementById('deadlineDate').value;
+
+            // Store the deadline data
+            projectDeadline = {
+                projectName: projectName,
+                deadline: new Date(deadlineDate)
+            };
+
+            // Update display
+            updateDeadlineDisplay();
+
+            // Close modal
+            modal.style.display = 'none';
+
+            // Save to localStorage
+            localStorage.setItem('projectDeadline', JSON.stringify(projectDeadline));
+        });
+
+        // Function to update the deadline display
+        function updateDeadlineDisplay() {
+            const displayProjectName = document.getElementById('displayProjectName');
+            const displayDeadlineDate = document.getElementById('displayDeadlineDate');
+            const displayTimeRemaining = document.getElementById('displayTimeRemaining');
+
+            displayProjectName.textContent = projectDeadline.projectName;
+            displayDeadlineDate.textContent = projectDeadline.deadline.toLocaleDateString();
+
+            // Calculate and display time remaining
+            const timeRemaining = getTimeRemaining(projectDeadline.deadline);
+            displayTimeRemaining.textContent = timeRemaining;
+
+            // Show the deadline display section
+            deadlineDisplay.style.display = 'block';
+        }
+
+        // Function to calculate time remaining
+        function getTimeRemaining(deadline) {
+            const now = new Date();
+            const timeDiff = deadline - now;
+
+            if (timeDiff < 0) {
+                return 'Deadline passed';
+            }
+
+            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+            return `${days} days and ${hours} hours`;
+        }
+
+        // Load saved deadline on page load
+        window.addEventListener('load', () => {
+            const savedDeadline = localStorage.getItem('projectDeadline');
+            if (savedDeadline) {
+                projectDeadline = JSON.parse(savedDeadline);
+                projectDeadline.deadline = new Date(projectDeadline.deadline);
+                updateDeadlineDisplay();
+            }
+        });
+
+        // Update time remaining every minute
+        setInterval(() => {
+            if (projectDeadline.deadline) {
+                updateDeadlineDisplay();
+            }
+        }, 60000);
+
+    });
+
+
+
+
+
+
+
 });
