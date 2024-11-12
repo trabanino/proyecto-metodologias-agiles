@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     addSprintBtn.addEventListener('click', (e) => {
         e.preventDefault();
         // lógica para añadir un sprint
-        alert('PENDIENTE: añadir sprint no implementada todavía');
+        window.location.href = `/add_sprint.html?projectId=${projectId}`;
     });
 
     sprintsBtn.addEventListener('click', (e) => {
