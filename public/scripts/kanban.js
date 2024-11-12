@@ -25,16 +25,13 @@ async function loadKanbanBoard() {
         const project = await projectResponse.json();
         document.getElementById('projectName').textContent = project.nombre;
 
-        // Check if the user is the owner
         const userId = parseJwt(token).id;
         isOwner = project.owner === userId;
 
-        // Show delete project button if owner
         if (isOwner) {
             document.getElementById('deleteProjectBtn').style.display = 'block';
         }
 
-        // Load project members
         projectMembers = [];
         for (const miembroId of project.miembros) {
             const usuarioResponse = await fetch(`/api/users/${miembroId}`, {
@@ -62,8 +59,6 @@ async function loadKanbanBoard() {
         const tasks = await tasksResponse.json();
 
         renderKanbanBoard(tasks, project.columns);
-
-        // Load notifications
         loadNotifications();
 
     } catch (error) {
@@ -91,7 +86,6 @@ function renderKanbanBoard(tasks, columns) {
         const columnTasks = tasks.filter(task => task.status === columnName);
 
         columnTasks.forEach(taskData => {
-            // Ensure taskData properties have default values
             const title = taskData.title || 'Sin título';
             const description = taskData.description || '';
             const urgencyClass = taskData.urgency || 'label-yellow';
@@ -136,15 +130,13 @@ function addTask(button) {
 function openTaskModal(column) {
     targetColumn = column || targetColumn;
 
-    // Set default values if currentTask is null
     document.getElementById("task-title").value = currentTask ? currentTask.querySelector(".task-title").textContent.trim() : "";
     document.getElementById("task-description").value = currentTask ? currentTask.querySelector(".task-description").textContent.trim() : "";
-    document.getElementById("task-notes").value = currentTask ? currentTask.getAttribute('data-task-notes') || '' : '';
+    document.getElementById("task-notes").value = currentTask ? currentTask.getAttribute('data-task-notes') || '' : "";
 
     const urgencyClass = currentTask ? currentTask.className.split(" ").find(c => c.startsWith("label-")) : "label-yellow";
     document.getElementById("task-urgency").value = urgencyClass;
 
-    // Populate assignees select
     const assigneesSelect = document.getElementById("task-assignees");
     assigneesSelect.innerHTML = '';
     projectMembers.forEach(member => {
@@ -331,7 +323,6 @@ async function drop(event) {
         const sourceColumnName = event.dataTransfer.getData("source-column");
         const newStatus = targetColumn.querySelector('h2').textContent;
 
-        // Find the task element being dragged
         const taskElement = document.querySelector(`[data-task-id='${taskId}']`);
         if (!taskElement) {
             console.error('Task element not found');
@@ -352,7 +343,6 @@ async function drop(event) {
                     alert('Error al actualizar el estado de la tarea');
                     return;
                 }
-                // Move the task element to the new column
                 targetColumn.insertBefore(taskElement, targetColumn.querySelector('.add-task'));
                 taskElement.setAttribute('data-status', newStatus);
             } catch (error) {
@@ -360,7 +350,6 @@ async function drop(event) {
                 alert('Error al actualizar el estado de la tarea');
             }
         } else {
-            // Move the task element to the new position within the same column
             targetColumn.insertBefore(taskElement, event.target.closest('.task'));
         }
     }
@@ -518,7 +507,6 @@ function confirmDeleteColumn(button) {
 
 async function deleteColumn(columnName) {
     try {
-        // Remove tasks associated with the column
         await fetch(`/api/projects/${projectId}/tasks`, {
             method: 'DELETE',
             headers: {
@@ -528,7 +516,6 @@ async function deleteColumn(columnName) {
             body: JSON.stringify({ status: columnName })
         });
 
-        // Remove the column from the project
         await fetch(`/api/projects/${projectId}/columns`, {
             method: 'DELETE',
             headers: {
@@ -582,5 +569,76 @@ function parseJwt(token) {
         return JSON.parse(payload);
     } catch (e) {
         return null;
+    }
+}
+
+async function generateReport() {
+    try {
+        const response = await fetch(`/api/projects/${projectId}/report`, {
+            headers: {
+                'Authorization': token
+            }
+        });
+        if (!response.ok) {
+            alert('Error al generar el reporte');
+            return;
+        }
+        const report = await response.json();
+        const ventanaReporte = window.open("", "_blank", "width=800,height=600");
+        ventanaReporte.document.write("<h1>Reporte de Avance</h1>");
+        ventanaReporte.document.write(`
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <canvas id="grafico" width="400" height="200"></canvas>
+        `);
+        ventanaReporte.document.write(`
+            <script>
+                window.onload = function() {
+                    const ctx = document.getElementById('grafico').getContext('2d');
+                    const labels = ${JSON.stringify(report.map(col => col.estado))};
+                    const dataAlta = ${JSON.stringify(report.map(col => col.urgencias.Alta))};
+                    const dataMedia = ${JSON.stringify(report.map(col => col.urgencias.Media))};
+                    const dataBaja = ${JSON.stringify(report.map(col => col.urgencias.Baja))};
+                    const chart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Alta',
+                                    data: dataAlta,
+                                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                    borderColor: 'rgba(255, 99, 132, 1)',
+                                    borderWidth: 1
+                                },
+                                {
+                                    label: 'Media',
+                                    data: dataMedia,
+                                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                                    borderColor: 'rgba(255, 159, 64, 1)',
+                                    borderWidth: 1
+                                },
+                                {
+                                    label: 'Baja',
+                                    data: dataBaja,
+                                    backgroundColor: 'rgba(255, 205, 86, 0.2)',
+                                    borderColor: 'rgba(255, 205, 86, 1)',
+                                    borderWidth: 1
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: { beginAtZero: true }
+                            }
+                        }
+                    });
+                }
+            </script>
+        `);
+        ventanaReporte.document.close();
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al generar el reporte');
     }
 }

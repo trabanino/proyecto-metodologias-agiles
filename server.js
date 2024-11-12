@@ -10,11 +10,8 @@ const jwtSecret = '8c20f7077ddcbf3131a328142c708c0ccde6323d353727681f36bfe7a1c64
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Serve static files before defining routes
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Routes for serving HTML files
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -59,8 +56,6 @@ async function main() {
 
     try {
         await client.connect();
-        console.log('Conectado a MongoDB');
-
         const db = client.db(dbName);
 
         const usersCollection = db.collection('usuarios');
@@ -69,7 +64,6 @@ async function main() {
         const sprintsCollection = db.collection('sprints');
         const userStoriesCollection = db.collection('user_stories');
 
-        // User registration
         app.post('/api/register', async (req, res) => {
             const { nombre, correo, contraseña, rol } = req.body;
             const usuarioExistente = await usersCollection.findOne({ correo });
@@ -82,7 +76,6 @@ async function main() {
             res.status(201).json({ mensaje: 'Usuario registrado exitosamente' });
         });
 
-        // User login
         app.post('/api/login', async (req, res) => {
             const { correo, contraseña } = req.body;
             const usuario = await usersCollection.findOne({ correo });
@@ -97,7 +90,6 @@ async function main() {
             res.json({ mensaje: 'Inicio de sesión exitoso', token });
         });
 
-        // Token verification middleware
         function verificarToken(req, res, next) {
             const token = req.headers['authorization'];
             if (!token) {
@@ -112,19 +104,16 @@ async function main() {
             }
         }
 
-        // Generate project code
         function generateProjectCode() {
             return Math.random().toString(36).substr(2, 8);
         }
 
-        // Get projects
         app.get('/api/projects', verificarToken, async (req, res) => {
             const userId = req.usuario.id;
             const projects = await projectsCollection.find({ miembros: userId }).toArray();
             res.send(projects);
         });
 
-        // Create project
         app.post('/api/projects', verificarToken, async (req, res) => {
             const userId = req.usuario.id;
             const { nombre, descripcion, miembrosInvitados, tipo } = req.body;
@@ -155,7 +144,6 @@ async function main() {
             res.send(insertedProject);
         });
 
-        // Join project
         app.post('/api/projects/join', verificarToken, async (req, res) => {
             const userId = req.usuario.id;
             const { projectCode } = req.body;
@@ -178,7 +166,6 @@ async function main() {
             res.json({ mensaje: 'Te has unido al proyecto' });
         });
 
-        // Delete project
         app.delete('/api/projects/:id', verificarToken, async (req, res) => {
             const projectId = req.params.id;
             const userId = req.usuario.id;
@@ -201,7 +188,6 @@ async function main() {
             res.json({ mensaje: 'Proyecto eliminado' });
         });
 
-        // Get project details
         app.get('/api/projects/:id', verificarToken, async (req, res) => {
             const projectId = req.params.id;
             const userId = req.usuario.id;
@@ -223,7 +209,6 @@ async function main() {
             res.send(project);
         });
 
-        // Invite member to project
         app.post('/api/projects/:id/invite', verificarToken, async (req, res) => {
             const projectId = req.params.id;
             const userId = req.usuario.id;
@@ -257,14 +242,12 @@ async function main() {
             res.json({ mensaje: 'Invitación enviada' });
         });
 
-        // Get invitations
         app.get('/api/invites', verificarToken, async (req, res) => {
             const userId = req.usuario.id;
             const projects = await projectsCollection.find({ invitacionesPendientes: userId }).toArray();
             res.send(projects);
         });
 
-        // Accept invitation
         app.post('/api/invites/:projectId/accept', verificarToken, async (req, res) => {
             const projectId = req.params.projectId;
             const userId = req.usuario.id;
@@ -295,7 +278,6 @@ async function main() {
             res.json({ mensaje: 'Invitación aceptada' });
         });
 
-        // Reject invitation
         app.post('/api/invites/:projectId/reject', verificarToken, async (req, res) => {
             const projectId = req.params.projectId;
             const userId = req.usuario.id;
@@ -323,7 +305,6 @@ async function main() {
             res.json({ mensaje: 'Invitación rechazada' });
         });
 
-        // Get notifications
         app.get('/api/notifications', verificarToken, async (req, res) => {
             const userId = req.usuario.id;
             const projects = await projectsCollection.find({ invitacionesPendientes: userId }).toArray();
@@ -334,7 +315,6 @@ async function main() {
             res.send(notifications);
         });
 
-        // Get user details
         app.get('/api/users/:id', verificarToken, async (req, res) => {
             const userId = req.params.id;
 
@@ -352,7 +332,6 @@ async function main() {
             res.send(usuario);
         });
 
-        // Get tasks
         app.get('/api/projects/:projectId/tasks', verificarToken, async (req, res) => {
             const projectId = req.params.projectId;
             const userId = req.usuario.id;
@@ -376,7 +355,6 @@ async function main() {
             res.send(tasks);
         });
 
-        // Create task
         app.post('/api/projects/:projectId/tasks', verificarToken, async (req, res) => {
             const projectId = req.params.projectId;
             const userId = req.usuario.id;
@@ -412,7 +390,6 @@ async function main() {
             res.send(insertedTask);
         });
 
-        // Update task
         app.put('/api/projects/:projectId/tasks/:taskId', verificarToken, async (req, res) => {
             const projectId = req.params.projectId;
             const taskId = req.params.taskId;
@@ -443,7 +420,6 @@ async function main() {
             res.json({ mensaje: 'Tarea actualizada' });
         });
 
-        // Delete task
         app.delete('/api/projects/:projectId/tasks/:taskId', verificarToken, async (req, res) => {
             const projectId = req.params.projectId;
             const taskId = req.params.taskId;
@@ -470,7 +446,6 @@ async function main() {
             res.json({ mensaje: 'Tarea eliminada' });
         });
 
-        // Add new column to project
         app.post('/api/projects/:projectId/columns', verificarToken, async (req, res) => {
             const projectId = req.params.projectId;
             const userId = req.usuario.id;
@@ -499,7 +474,6 @@ async function main() {
             res.json({ mensaje: 'Columna añadida' });
         });
 
-        // Delete column from project
         app.delete('/api/projects/:projectId/columns', verificarToken, async (req, res) => {
             const projectId = req.params.projectId;
             const userId = req.usuario.id;
@@ -528,7 +502,6 @@ async function main() {
             res.json({ mensaje: 'Columna eliminada' });
         });
 
-        // Delete tasks by status
         app.delete('/api/projects/:projectId/tasks', verificarToken, async (req, res) => {
             const projectId = req.params.projectId;
             const userId = req.usuario.id;
@@ -554,7 +527,6 @@ async function main() {
             res.json({ mensaje: 'Tareas eliminadas' });
         });
 
-        // Get sprints
         app.get('/api/projects/:projectId/sprints', verificarToken, async (req, res) => {
             const projectId = req.params.projectId;
             const userId = req.usuario.id;
@@ -582,7 +554,6 @@ async function main() {
             res.send(sprints);
         });
 
-        // Create sprint
         app.post('/api/projects/:projectId/sprints', verificarToken, async (req, res) => {
             const projectId = req.params.projectId;
             const userId = req.usuario.id;
@@ -614,7 +585,6 @@ async function main() {
             res.json({ mensaje: 'Sprint creado' });
         });
 
-        // Create user story
         app.post('/api/projects/:projectId/sprints/:sprintId/userstories', verificarToken, async (req, res) => {
             const projectId = req.params.projectId;
             const sprintId = req.params.sprintId;
@@ -645,7 +615,6 @@ async function main() {
             res.json({ mensaje: 'User Story creada' });
         });
 
-        // Get user story
         app.get('/api/projects/:projectId/sprints/:sprintId/userstories/:userStoryId', verificarToken, async (req, res) => {
             const { projectId, sprintId, userStoryId } = req.params;
             const userId = req.usuario.id;
@@ -665,7 +634,6 @@ async function main() {
             res.send(userStory);
         });
 
-        // Update user story
         app.put('/api/projects/:projectId/sprints/:sprintId/userstories/:userStoryId', verificarToken, async (req, res) => {
             const { projectId, sprintId, userStoryId } = req.params;
             const userId = req.usuario.id;
@@ -686,7 +654,6 @@ async function main() {
             res.json({ mensaje: 'User Story actualizada' });
         });
 
-        // Delete user story
         app.delete('/api/projects/:projectId/sprints/:sprintId/userstories/:userStoryId', verificarToken, async (req, res) => {
             const { projectId, sprintId, userStoryId } = req.params;
             const userId = req.usuario.id;
@@ -703,7 +670,34 @@ async function main() {
             res.json({ mensaje: 'User Story eliminada' });
         });
 
-        // Start the server
+        app.get('/api/projects/:projectId/report', verificarToken, async (req, res) => {
+            const projectId = req.params.projectId;
+            const userId = req.usuario.id;
+            let projectObjectId;
+            try {
+                projectObjectId = new ObjectId(projectId);
+            } catch (error) {
+                return res.status(400).json({ mensaje: 'ID de proyecto inválido' });
+            }
+            const project = await projectsCollection.findOne({ _id: projectObjectId });
+            if (!project) {
+                return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
+            }
+            if (!project.miembros.includes(userId)) {
+                return res.status(403).json({ mensaje: 'No tienes acceso a este proyecto' });
+            }
+            const tasks = await tasksCollection.find({ projectId }).toArray();
+            const columns = project.columns;
+            const report = columns.map(column => {
+                const columnTasks = tasks.filter(task => task.status === column);
+                const alta = columnTasks.filter(task => task.urgency === 'label-red').length;
+                const media = columnTasks.filter(task => task.urgency === 'label-orange').length;
+                const baja = columnTasks.filter(task => task.urgency === 'label-yellow').length;
+                return { estado: column, urgencias: { Alta: alta, Media: media, Baja: baja } };
+            });
+            res.json(report);
+        });
+
         app.listen(PORT, () => {
             console.log(`Servidor en puerto ${PORT}`);
         });
