@@ -34,7 +34,7 @@ async function loadKanbanBoard() {
         }
         const tasks = await tasksResponse.json();
 
-        renderKanbanBoard(tasks);
+        renderKanbanBoard(tasks, project.columns);
 
     } catch (error) {
         console.error('Error:', error);
@@ -42,11 +42,9 @@ async function loadKanbanBoard() {
     }
 }
 
-function renderKanbanBoard(tasks) {
+function renderKanbanBoard(tasks, columns) {
     const board = document.querySelector('.board');
     board.innerHTML = '';
-
-    const columns = ['To Do', 'In Progress', 'Done'];
 
     columns.forEach(columnName => {
         const column = document.createElement('div');
@@ -88,6 +86,37 @@ function addTask(button) {
     isCreatingNewTask = true;
     currentTask = null;
     targetColumn = button.parentNode;
+    openTaskModal();
+}
+
+function openTaskModal(column) {
+    targetColumn = column || targetColumn;
+    document.getElementById("task-title").value = currentTask ? currentTask.querySelector(".task-title").textContent.trim() : "";
+    document.getElementById("task-description").value = currentTask ? currentTask.querySelector(".task-description").textContent.trim() : "";
+    document.getElementById("task-assignees").value = currentTask ? currentTask.querySelector(".assignees").textContent.replace("Asignado a: ", "").trim() : "";
+    document.getElementById("task-urgency").value = currentTask ? currentTask.className.split(" ").find(c => c.startsWith("label-")) : "label-yellow";
+
+    document.getElementById("taskModal").style.display = "block";
+    document.querySelector(".overlay").style.display = "block";
+}
+
+function closeTaskModal() {
+    document.getElementById("taskModal").style.display = "none";
+    document.querySelector(".overlay").style.display = "none";
+    currentTask = null;
+    isCreatingNewTask = false;
+    targetColumn = null;
+}
+
+document.querySelector(".overlay").addEventListener("click", () => {
+    closeTaskModal();
+    closeMembersModal();
+});
+
+function openEditModal(button) {
+    currentTask = button.parentNode;
+    isCreatingNewTask = false;
+    targetColumn = currentTask.parentNode;
     openTaskModal();
 }
 
@@ -150,31 +179,28 @@ async function saveTask() {
     }
 }
 
-function openTaskModal() {
-    document.getElementById("task-title").value = currentTask ? currentTask.querySelector(".task-title").textContent.trim() : "";
-    document.getElementById("task-description").value = currentTask ? currentTask.querySelector(".task-description").textContent.trim() : "";
-    document.getElementById("task-assignees").value = currentTask ? currentTask.querySelector(".assignees").textContent.replace("Asignado a: ", "").trim() : "";
-    document.getElementById("task-urgency").value = currentTask ? currentTask.className.split(" ").find(c => c.startsWith("label-")) : "label-yellow";
-
-    document.querySelector(".modal").style.display = "block";
-    document.querySelector(".overlay").style.display = "block";
-}
-
-function closeTaskModal() {
-    document.querySelector(".modal").style.display = "none";
-    document.querySelector(".overlay").style.display = "none";
-    currentTask = null;
-    isCreatingNewTask = false;
-    targetColumn = null;
-}
-
-document.querySelector(".overlay").addEventListener("click", closeTaskModal);
-
-function openEditModal(button) {
-    currentTask = button.parentNode;
-    isCreatingNewTask = false;
-    targetColumn = currentTask.parentNode;
-    openTaskModal();
+async function addNewColumn() {
+    const columnName = prompt("Ingrese el nombre del nuevo estado:");
+    if (columnName) {
+        try {
+            const response = await fetch(`/api/projects/${projectId}/columns`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token
+                },
+                body: JSON.stringify({ columnName })
+            });
+            if (!response.ok) {
+                alert('Error al añadir la columna');
+                return;
+            }
+            loadKanbanBoard();
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al añadir la columna');
+        }
+    }
 }
 
 async function confirmDeleteTask(event, button) {
@@ -201,20 +227,12 @@ async function confirmDeleteTask(event, button) {
     }
 }
 
-function confirmDeleteColumn(button) {
-    const confirmed = confirm("¿Estás seguro que deseas eliminar toda esta columna y sus tareas?");
-    if (confirmed) {
-        button.parentNode.remove();
-    }
-}
-
 function allowDrop(event) {
     event.preventDefault();
 }
 
 function drag(event) {
     const taskId = event.target.getAttribute("data-task-id");
-    event.dataTransfer.setData("text/plain", event.target.outerHTML);
     event.dataTransfer.setData("task-id", taskId);
     event.dataTransfer.setData("source-column", event.target.parentNode.querySelector('h2').textContent);
 }
@@ -250,21 +268,36 @@ async function drop(event) {
     }
 }
 
-document.querySelector('.back-btn').addEventListener('click', () => {
+function goBack() {
     window.location.href = '/dashboard';
-});
+}
 
-document.querySelector('.members-btn').addEventListener('click', openMembersModal);
+function openNotifications() {
+    alert('No hay notificaciones nuevas');
+}
 
-const membersModal = document.getElementById('membersModal');
-const closeMembersModalBtn = membersModal.querySelector('.close');
-closeMembersModalBtn.addEventListener('click', () => {
-    membersModal.style.display = 'none';
-});
+function addTaskFromSidebar() {
+    const columnNames = Array.from(document.querySelectorAll('.column h2')).map(h2 => h2.textContent);
+    const columnName = prompt('Seleccione la columna para añadir la tarea:\n' + columnNames.join('\n'));
+    const targetColumn = Array.from(document.querySelectorAll('.column')).find(column => column.querySelector('h2').textContent === columnName);
+    if (targetColumn) {
+        isCreatingNewTask = true;
+        currentTask = null;
+        openTaskModal(targetColumn);
+    } else {
+        alert('Columna no encontrada');
+    }
+}
 
 function openMembersModal() {
-    membersModal.style.display = 'block';
+    document.getElementById('membersModal').style.display = 'block';
+    document.querySelector('.overlay').style.display = 'block';
     loadMembers();
+}
+
+function closeMembersModal() {
+    document.getElementById('membersModal').style.display = 'none';
+    document.querySelector('.overlay').style.display = 'none';
 }
 
 async function loadMembers() {
@@ -294,6 +327,9 @@ async function loadMembers() {
             const usuario = await usuarioResponse.json();
             const li = document.createElement('li');
             li.textContent = `${usuario.nombre} (${usuario.correo})`;
+            if (project.owner === miembroId) {
+                li.textContent += ' (Propietario)';
+            }
             miembrosList.appendChild(li);
         }
     } catch (error) {
@@ -332,3 +368,40 @@ document.getElementById('invitarBtn').addEventListener('click', async () => {
         alert('Error al invitar miembro');
     }
 });
+
+function confirmDeleteColumn(button) {
+    const confirmed = confirm("¿Estás seguro que deseas eliminar esta columna y sus tareas?");
+    if (confirmed) {
+        const columnName = button.parentNode.querySelector('h2').textContent;
+        deleteColumn(columnName);
+    }
+}
+
+async function deleteColumn(columnName) {
+    try {
+        // Remove tasks associated with the column
+        await fetch(`/api/projects/${projectId}/tasks`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token
+            },
+            body: JSON.stringify({ status: columnName })
+        });
+
+        // Remove the column from the project
+        await fetch(`/api/projects/${projectId}/columns`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token
+            },
+            body: JSON.stringify({ columnName })
+        });
+
+        loadKanbanBoard();
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al eliminar la columna');
+    }
+}

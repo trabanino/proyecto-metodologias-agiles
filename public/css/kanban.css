@@ -1,4 +1,4 @@
-@import url('css/dashboard.css');
+@import url('dashboard.css');
 
 .board {
     display: flex;
@@ -11,6 +11,7 @@
     border-radius: 8px;
     width: 250px;
     padding: 15px;
+    box-sizing: border-box;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     position: relative;
 }
@@ -119,10 +120,33 @@
     width: 300px;
 }
 
-.modal input, .modal textarea, .modal select {
-    width: 100%;
+.modal-content {
+    position: relative;
+}
+
+.modal-content .close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.invitar-miembro {
+    margin-top: 20px;
+}
+
+.invitar-miembro h3 {
     margin-bottom: 10px;
-    padding: 5px;
+}
+
+#miembrosList {
+    list-style: none;
+    padding: 0;
+}
+
+#miembrosList li {
+    margin-bottom: 5px;
 }
 
 .members-btn {
@@ -141,17 +165,5 @@
     border: none;
     padding: 10px;
     border-radius: 5px;
-    cursor: pointer;
-}
-
-.modal-content {
-    background-color: #ffffff;
-    padding: 20px;
-    border-radius: 8px;
-}
-
-.modal-content .close {
-    float: right;
-    font-size: 24px;
     cursor: pointer;
 }

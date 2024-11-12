@@ -2,7 +2,6 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kanban</title>
     <link rel="stylesheet" href="css/dashboard.css">
     <link rel="stylesheet" href="css/kanban.css">
@@ -11,13 +10,12 @@
 <body>
 <div class="container">
     <aside class="sidebar">
-        <button class="add-btn"><i class="fas fa-plus"></i></button>
+        <button class="add-btn" onclick="addTaskFromSidebar()"><i class="fas fa-plus"></i></button>
         <nav>
             <ul>
-                <li><button><i class="fas fa-tasks"></i></button></li>
-                <li><button><i class="fas fa-check"></i></button></li>
-                <li><button><i class="fas fa-users"></i></button></li>
-                <li><button><i class="fas fa-user-plus"></i></button></li>
+                <li><button onclick="openMembersModal()"><i class="fas fa-users"></i></button></li>
+                <li><button onclick="openNotifications()"><i class="fas fa-bell"></i></button></li>
+                <li><button onclick="goBack()"><i class="fas fa-arrow-left"></i></button></li>
             </ul>
         </nav>
     </aside>
@@ -25,8 +23,6 @@
     <main>
         <header>
             <h1 id="projectName">Proyecto Kanban</h1>
-            <button class="back-btn"><i class="fas fa-arrow-left"></i> Regresar</button>
-            <button class="members-btn"><i class="fas fa-users"></i> Miembros</button>
         </header>
 
         <div class="board">
@@ -36,7 +32,8 @@
 </div>
 
 <div class="overlay"></div>
-<div class="modal">
+
+<div class="modal" id="taskModal">
     <h2>Tarea</h2>
     <input type="text" id="task-title" placeholder="Título de la tarea">
     <textarea id="task-description" placeholder="Descripción"></textarea>
@@ -51,7 +48,7 @@
 
 <div class="modal" id="membersModal">
     <div class="modal-content">
-        <span class="close">&times;</span>
+        <span class="close" onclick="closeMembersModal()">&times;</span>
         <h2>Miembros del Proyecto</h2>
         <ul id="miembrosList"></ul>
         <div class="invitar-miembro">
