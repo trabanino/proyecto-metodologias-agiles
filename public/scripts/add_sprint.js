@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     const sprints = [
-        { id: 1, name: "Sprint 1", startDate: "2024-11-01", endDate: "2024-11-07", progress: 50, status: "in-progress" },
-        { id: 2, name: "Sprint 2", startDate: "2024-11-08", endDate: "2024-11-14", progress: 100, status: "completed" },
+        { id: 1, name: "Sprint 1", startDate: "2024-11-01", endDate: "2024-11-07", status: "in-progress" },
+        { id: 2, name: "Sprint 2", startDate: "2024-11-08", endDate: "2024-11-14", status: "completed" },
     ];
 
     const sprintsContainer = document.querySelector(".sprints-container");
@@ -15,9 +15,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const statusInput = modal.querySelector("#status");
     let editingSprint = null;
 
+    const calculateProgress = (startDate, endDate) => {
+        const today = new Date();
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        if (today < start) return 0;
+        if (today > end) return 100;
+
+        const total = end - start;
+        const elapsed = today - start;
+        return Math.round((elapsed / total) * 100);
+    };
+
     const renderSprints = () => {
         sprintsContainer.innerHTML = "";
         sprints.forEach((sprint) => {
+            const progress = calculateProgress(sprint.startDate, sprint.endDate);
             const sprintElement = document.createElement("div");
             sprintElement.classList.add("sprint");
             sprintElement.innerHTML = `
@@ -25,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="sprint-name">${sprint.name}</div>
                     <div class="sprint-dates">Fecha inicio: ${sprint.startDate}<br>Fecha fin: ${sprint.endDate}</div>
                     <div class="progress-bar-container">
-                        <div class="progress-bar" style="width: ${sprint.progress}%"></div>
+                        <div class="progress-bar" style="width: ${progress}%;"></div>
                     </div>
                 </div>
                 <button class="status-btn ${sprint.status}">${sprint.status.replace("-", " ")}</button>
@@ -59,19 +73,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     saveBtn.addEventListener("click", () => {
         if (editingSprint) {
-            // Edit existing sprint
             editingSprint.name = sprintNameInput.value;
             editingSprint.startDate = startDateInput.value;
             editingSprint.endDate = endDateInput.value;
             editingSprint.status = statusInput.value;
         } else {
-            // Add new sprint
             const newSprint = {
                 id: sprints.length + 1,
                 name: sprintNameInput.value,
                 startDate: startDateInput.value,
                 endDate: endDateInput.value,
-                progress: 0,
                 status: statusInput.value,
             };
             sprints.push(newSprint);
@@ -81,7 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     addSprintBtn.addEventListener("click", () => {
-        openEditModal(); // Open modal for adding a new sprint
+        openEditModal();
     });
 
     renderSprints();
