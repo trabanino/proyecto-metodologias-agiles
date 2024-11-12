@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     addSprintBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        // lógica para añadir un sprint
+        // lógica para añadir un spri
         window.location.href = `/add_sprint.html?projectId=${projectId}`;
     });
 
