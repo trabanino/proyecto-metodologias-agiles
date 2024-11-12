@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,6 +9,7 @@
     <link rel="stylesheet" href="css/navindex.css">
     <link rel="stylesheet" href="css/kanban.css">
 </head>
+
 <body>
     <header>
         <nav>
@@ -44,8 +46,11 @@
             <button class="add-task" onclick="addTask(this)">+ Añade una tarjeta</button>
         </div>
     </div>
-    <button class="add-column-container" onclick="addNewColumn()">+ Añadir Estado</button>
+
+    <button class="add-column-container">+ Añadir Estado</button>
     <button onclick="generarReporte()">Generar Reporte de Avance</button>
+
+
 
 
     <div class="overlay"></div>
@@ -63,4 +68,5 @@
     </div>
     <script src="scripts/kanban.js"></script>
 </body>
+
 </html>
