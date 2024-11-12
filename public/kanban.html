@@ -2,63 +2,46 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Tablero Kanban con Drag and Drop</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="css/navindex.css">
+    <title>Tablero Kanban</title>
     <link rel="stylesheet" href="css/kanban.css">
 </head>
 <body>
-    <header>
-        <nav>
-            <ul id="menulista">
-                <li><a href="home">Inicio</a></li>
-                <li><a href="#">Mas Informacion</a></li>
-                <li><a href="#">Conocenos</a></li>
-                <li><a href="#">Contacto</a></li>
-            </ul>
-        </nav>
-    </header>
-    <aside class="sidebar">
-        <a href="asignar_tareas.html"><i class="fas fa-plus"></i></a>
-        <a href="#"><i class="fas fa-tasks"></i></a>
-        <a href="#"><i class="fas fa-check"></i></a>
-        <a href="#"><i class="fas fa-users"></i></a>
-        <a href="#"><i class="fas fa-user-plus"></i></a>
-    </aside>
-    <h1>Tablero Kanban con Drag and Drop</h1>
-    <div class="board">
-        <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <h2>Tareas Pendientes</h2>
-            <button class="delete-column" onclick="confirmDeleteColumn(this)">X</button>
-            <button class="add-task" onclick="addTask(this)">+ Añade una tarjeta</button>
-        </div>
-        <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <h2>En Progreso</h2>
-            <button class="delete-column" onclick="confirmDeleteColumn(this)">X</button>
-            <button class="add-task" onclick="addTask(this)">+ Añade una tarjeta</button>
-        </div>
-        <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <h2>Tareas Completadas</h2>
-            <button class="delete-column" onclick="confirmDeleteColumn(this)">X</button>
-            <button class="add-task" onclick="addTask(this)">+ Añade una tarjeta</button>
-        </div>
-    </div>
-    <button class="add-column-container" onclick="addNewColumn()">+ Añadir Estado</button>
+<header>
+    <nav>
+        <ul id="menulista">
+            <li><a href="dashboard.html">Inicio</a></li>
+            <li><a href="#">Más Información</a></li>
+            <li><a href="#">Conócenos</a></li>
+            <li><a href="#">Contacto</a></li>
+        </ul>
+    </nav>
+</header>
+<aside class="sidebar">
+    <a href="#"><i class="fas fa-plus"></i></a>
+    <a href="#"><i class="fas fa-tasks"></i></a>
+    <a href="#"><i class="fas fa-check"></i></a>
+    <a href="#"><i class="fas fa-users"></i></a>
+    <a href="#"><i class="fas fa-user-plus"></i></a>
+</aside>
+<h1>Tablero Kanban</h1>
+<div class="board">
+    <!-- Columns will be generated dynamically -->
+</div>
+<button class="add-column-container" onclick="addNewColumn()">+ Añadir Estado</button>
 
-    <div class="overlay"></div>
-    <div class="modal">
-        <h2>Tarea</h2>
-        <input type="text" id="task-title" placeholder="Título de la tarea">
-        <textarea id="task-description" placeholder="Descripción"></textarea>
-        <select id="task-urgency">
-            <option value="label-red">Alta</option>
-            <option value="label-orange">Media</option>
-            <option value="label-yellow">Baja</option>
-        </select>
-        <input type="text" id="task-assignees" placeholder="Asignar a (separado por comas)">
-        <button onclick="saveTask()">Guardar</button>
-    </div>
-    <script src="scripts/kanban.js"></script>
+<div class="overlay"></div>
+<div class="modal">
+    <h2>Tarea</h2>
+    <input type="text" id="task-title" placeholder="Título de la tarea">
+    <textarea id="task-description" placeholder="Descripción"></textarea>
+    <select id="task-urgency">
+        <option value="label-red">Alta</option>
+        <option value="label-orange">Media</option>
+        <option value="label-yellow">Baja</option>
+    </select>
+    <input type="text" id="task-assignees" placeholder="Asignar a (separado por comas)">
+    <button onclick="saveTask()">Guardar</button>
+</div>
+<script src="scripts/kanban.js"></script>
 </body>
 </html>

@@ -30,7 +30,7 @@ async function main() {
         const projectsCollection = db.collection('proyectos');
         const tasksCollection = db.collection('tareas');
 
-        // sirve la pagina principal
+        // Serve static pages
         app.get('/', (req, res) => {
             res.sendFile(path.join(__dirname, 'public', 'index.html'));
         });
@@ -39,40 +39,44 @@ async function main() {
             res.sendFile(path.join(__dirname, 'public', 'index.html'));
         });
 
-        // sirve el dashboard
         app.get('/dashboard', (req, res) => {
             res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
         });
 
-        // sirve la pagina de login
         app.get('/login', (req, res) => {
             res.sendFile(path.join(__dirname, 'public', 'login.html'));
         });
 
-        // sirve la pagina de registro
         app.get('/register', (req, res) => {
             res.sendFile(path.join(__dirname, 'public', 'register.html'));
         });
 
-        // sirve la vista del proyecto
+        app.get('/kanban', (req, res) => {
+            res.sendFile(path.join(__dirname, 'public', 'kanban.html'));
+        });
+
+        app.get('/sprint_view', (req, res) => {
+            res.sendFile(path.join(__dirname, 'public', 'sprint_view.html'));
+        });
+
         app.get('/proyecto/:id', (req, res) => {
             res.sendFile(path.join(__dirname, 'public', 'project_view.html'));
         });
 
-        // registrar un nuevo usuario
+        // User registration
         app.post('/api/register', async (req, res) => {
-            const { nombre, correo, contraseña, rol } = req.body;
+            const { nombre, correo, contraseña } = req.body;
             const usuarioExistente = await usersCollection.findOne({ correo });
             if (usuarioExistente) {
-                return res.status(400).json({ mensaje: 'El correo ya esta registrado' });
+                return res.status(400).json({ mensaje: 'El correo ya está registrado' });
             }
             const contraseñaHash = await bcrypt.hash(contraseña, 10);
-            const nuevoUsuario = { nombre, correo, contraseña: contraseñaHash, rol: rol || 'miembro' };
+            const nuevoUsuario = { nombre, correo, contraseña: contraseñaHash, rol: 'miembro' };
             await usersCollection.insertOne(nuevoUsuario);
             res.status(201).json({ mensaje: 'Usuario registrado exitosamente' });
         });
 
-        // iniciar sesion
+        // User login
         app.post('/api/login', async (req, res) => {
             const { correo, contraseña } = req.body;
             const usuario = await usersCollection.findOne({ correo });
@@ -84,10 +88,10 @@ async function main() {
                 return res.status(400).json({ mensaje: 'Correo o contraseña incorrectos' });
             }
             const token = jwt.sign({ id: usuario._id.toString(), rol: usuario.rol }, jwtSecret, { expiresIn: '1h' });
-            res.json({ mensaje: 'Inicio de sesion exitoso', token });
+            res.json({ mensaje: 'Inicio de sesión exitoso', token });
         });
 
-        // rutas protegidas con verificarToken
+        // Middleware to verify token
         function verificarToken(req, res, next) {
             const token = req.headers['authorization'];
             if (!token) {
@@ -98,28 +102,33 @@ async function main() {
                 req.usuario = verificado;
                 next();
             } catch (error) {
-                res.status(400).json({ mensaje: 'Token invalido' });
+                res.status(400).json({ mensaje: 'Token inválido' });
             }
         }
 
-        // generar codigo de proyecto
+        // Generate project code
         function generateProjectCode() {
             return Math.random().toString(36).substr(2, 8);
         }
 
-        // obtener proyectos del usuario
+        // Get user's projects
         app.get('/api/projects', verificarToken, async (req, res) => {
             const userId = req.usuario.id;
             const projects = await projectsCollection.find({ miembros: userId }).toArray();
             res.send(projects);
         });
 
+        // Create a new project
         app.post('/api/projects', verificarToken, async (req, res) => {
             const userId = req.usuario.id;
-            const { nombre, descripcion, miembrosInvitados } = req.body;
+            const { nombre, descripcion, miembrosInvitados, tipo } = req.body;
             const miembros = [userId];
 
-            // buscar los usuarios por correo y agregar sus IDs a miembros
+            if (!['kanban', 'scrum'].includes(tipo)) {
+                return res.status(400).json({ mensaje: 'Tipo de proyecto inválido' });
+            }
+
+            // Invite users by email
             if (miembrosInvitados && miembrosInvitados.length > 0) {
                 const usuariosInvitados = await usersCollection.find({ correo: { $in: miembrosInvitados } }).toArray();
                 const invitadosIds = usuariosInvitados.map(usuario => usuario._id.toString());
@@ -131,16 +140,17 @@ async function main() {
                 descripcion,
                 owner: userId,
                 miembros,
-                codigo: generateProjectCode()
+                codigo: generateProjectCode(),
+                tipo,
+                admins: [userId]
             };
 
             const result = await projectsCollection.insertOne(nuevoProyecto);
-            // obtener el proyecto insertado usando insertedId
             const insertedProject = await projectsCollection.findOne({ _id: result.insertedId });
-            res.send(insertedProject); // devolver el proyecto creado
+            res.send(insertedProject);
         });
 
-        // unirse a un proyecto por codigo
+        // Join a project by code
         app.post('/api/projects/join', verificarToken, async (req, res) => {
             const userId = req.usuario.id;
             const { projectCode } = req.body;
@@ -163,7 +173,7 @@ async function main() {
             res.json({ mensaje: 'Te has unido al proyecto' });
         });
 
-        // eliminar proyecto si es el owner
+        // Delete project
         app.delete('/api/projects/:id', verificarToken, async (req, res) => {
             const projectId = req.params.id;
             const userId = req.usuario.id;
@@ -171,25 +181,25 @@ async function main() {
             if (project.owner.toString() !== userId) {
                 return res.status(403).json({ mensaje: 'No tienes permiso para eliminar este proyecto' });
             }
-            const result = await projectsCollection.deleteOne({ _id: new ObjectId(projectId) });
-            res.send(result);
+            await projectsCollection.deleteOne({ _id: new ObjectId(projectId) });
+            res.json({ mensaje: 'Proyecto eliminado' });
         });
 
-        // obtener detalles del proyecto
+        // Get project details
         app.get('/api/projects/:id', verificarToken, async (req, res) => {
             const projectId = req.params.id;
             const userId = req.usuario.id;
             const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
             if (!project) {
-                return res.status(404).json({ mensaje: 'proyecto no encontrado' });
+                return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
             }
             if (!project.miembros.includes(userId)) {
-                return res.status(403).json({ mensaje: 'no tienes acceso a este proyecto' });
+                return res.status(403).json({ mensaje: 'No tienes acceso a este proyecto' });
             }
             res.send(project);
         });
 
-        // invitar miembro al proyecto
+        // Invite member to project
         app.post('/api/projects/:id/invite', verificarToken, async (req, res) => {
             const projectId = req.params.id;
             const userId = req.usuario.id;
@@ -197,44 +207,43 @@ async function main() {
 
             const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
             if (!project) {
-                return res.status(404).json({ mensaje: 'proyecto no encontrado' });
+                return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
             }
-            if (project.owner.toString() !== userId && project.admins && !project.admins.includes(userId)) {
-                return res.status(403).json({ mensaje: 'no tienes permiso para invitar miembros' });
+            if (project.owner.toString() !== userId && !project.admins.includes(userId)) {
+                return res.status(403).json({ mensaje: 'No tienes permiso para invitar miembros' });
             }
 
             const userToInvite = await usersCollection.findOne({ correo: email });
             if (!userToInvite) {
-                return res.status(404).json({ mensaje: 'usuario no encontrado' });
+                return res.status(404).json({ mensaje: 'Usuario no encontrado' });
             }
 
-            // agregar invitacion pendiente
             await projectsCollection.updateOne(
                 { _id: project._id },
                 { $addToSet: { invitacionesPendientes: userToInvite._id.toString() } }
             );
 
-            res.json({ mensaje: 'invitacion enviada' });
+            res.json({ mensaje: 'Invitación enviada' });
         });
 
-        // obtener invitaciones pendientes para el usuario
+        // Get pending invitations
         app.get('/api/invites', verificarToken, async (req, res) => {
             const userId = req.usuario.id;
             const projects = await projectsCollection.find({ invitacionesPendientes: userId }).toArray();
             res.send(projects);
         });
 
-        // aceptar invitacion
+        // Accept invitation
         app.post('/api/invites/:projectId/accept', verificarToken, async (req, res) => {
             const projectId = req.params.projectId;
             const userId = req.usuario.id;
 
             const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
             if (!project) {
-                return res.status(404).json({ mensaje: 'proyecto no encontrado' });
+                return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
             }
             if (!project.invitacionesPendientes || !project.invitacionesPendientes.includes(userId)) {
-                return res.status(400).json({ mensaje: 'no tienes una invitacion pendiente para este proyecto' });
+                return res.status(400).json({ mensaje: 'No tienes una invitación pendiente para este proyecto' });
             }
 
             await projectsCollection.updateOne(
@@ -245,20 +254,61 @@ async function main() {
                 }
             );
 
-            res.json({ mensaje: 'invitacion aceptada' });
+            res.json({ mensaje: 'Invitación aceptada' });
         });
 
-        // rechazar invitacion
+        // Get user's projects with member names
+        app.get('/api/projects', verificarToken, async (req, res) => {
+            const userId = req.usuario.id;
+            const projects = await projectsCollection.find({ miembros: userId }).toArray();
+
+            const projectsWithMembers = await Promise.all(projects.map(async project => {
+                const miembrosIds = project.miembros.map(id => new ObjectId(id));
+                const miembros = await usersCollection.find({ _id: { $in: miembrosIds } }).project({ nombre: 1 }).toArray();
+                const miembrosNombres = miembros.map(m => m.nombre);
+                return { ...project, miembrosNombres };
+            }));
+
+            res.send(projectsWithMembers);
+        });
+
+// Get notifications
+        app.get('/api/notifications', verificarToken, async (req, res) => {
+            const userId = req.usuario.id;
+            // Assuming you have a notifications collection or similar logic
+            const notifications = []; // Fetch notifications from your database
+            res.send(notifications);
+        });
+
+    // Get project details with owner information
+        app.get('/api/projects/:id', verificarToken, async (req, res) => {
+            const projectId = req.params.id;
+            const userId = req.usuario.id;
+            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
+            if (!project) {
+                return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
+            }
+            if (!project.miembros.includes(userId)) {
+                return res.status(403).json({ mensaje: 'No tienes acceso a este proyecto' });
+            }
+
+            const owner = await usersCollection.findOne({ _id: new ObjectId(project.owner) }, { projection: { nombre: 1 } });
+            project.ownerName = owner.nombre;
+
+            res.send(project);
+        });
+
+        // Decline invitation
         app.post('/api/invites/:projectId/decline', verificarToken, async (req, res) => {
             const projectId = req.params.projectId;
             const userId = req.usuario.id;
 
             const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
             if (!project) {
-                return res.status(404).json({ mensaje: 'proyecto no encontrado' });
+                return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
             }
             if (!project.invitacionesPendientes || !project.invitacionesPendientes.includes(userId)) {
-                return res.status(400).json({ mensaje: 'no tienes una invitacion pendiente para este proyecto' });
+                return res.status(400).json({ mensaje: 'No tienes una invitación pendiente para este proyecto' });
             }
 
             await projectsCollection.updateOne(
@@ -266,10 +316,10 @@ async function main() {
                 { $pull: { invitacionesPendientes: userId } }
             );
 
-            res.json({ mensaje: 'invitacion rechazada' });
+            res.json({ mensaje: 'Invitación rechazada' });
         });
 
-        // eliminar miembro del proyecto
+        // Remove member from project
         app.delete('/api/projects/:projectId/members/:memberId', verificarToken, async (req, res) => {
             const projectId = req.params.projectId;
             const memberId = req.params.memberId;
@@ -277,13 +327,13 @@ async function main() {
 
             const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
             if (!project) {
-                return res.status(404).json({ mensaje: 'proyecto no encontrado' });
+                return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
             }
-            if (project.owner.toString() !== userId && (!project.admins || !project.admins.includes(userId))) {
-                return res.status(403).json({ mensaje: 'no tienes permiso para eliminar miembros' });
+            if (project.owner.toString() !== userId && !project.admins.includes(userId)) {
+                return res.status(403).json({ mensaje: 'No tienes permiso para eliminar miembros' });
             }
             if (project.owner.toString() === memberId) {
-                return res.status(400).json({ mensaje: 'no puedes eliminar al owner del proyecto' });
+                return res.status(400).json({ mensaje: 'No puedes eliminar al propietario del proyecto' });
             }
 
             await projectsCollection.updateOne(
@@ -291,10 +341,10 @@ async function main() {
                 { $pull: { miembros: memberId, admins: memberId } }
             );
 
-            res.json({ mensaje: 'miembro eliminado' });
+            res.json({ mensaje: 'Miembro eliminado' });
         });
 
-        // asignar rol de admin a un miembro
+        // Assign admin role to a member
         app.post('/api/projects/:projectId/members/:memberId/role', verificarToken, async (req, res) => {
             const projectId = req.params.projectId;
             const memberId = req.params.memberId;
@@ -303,10 +353,10 @@ async function main() {
 
             const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
             if (!project) {
-                return res.status(404).json({ mensaje: 'proyecto no encontrado' });
+                return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
             }
             if (project.owner.toString() !== userId) {
-                return res.status(403).json({ mensaje: 'solo el owner puede asignar roles' });
+                return res.status(403).json({ mensaje: 'Solo el propietario puede asignar roles' });
             }
 
             if (role === 'admin') {
@@ -320,13 +370,13 @@ async function main() {
                     { $pull: { admins: memberId } }
                 );
             } else {
-                return res.status(400).json({ mensaje: 'rol invalido' });
+                return res.status(400).json({ mensaje: 'Rol inválido' });
             }
 
-            res.json({ mensaje: 'rol actualizado' });
+            res.json({ mensaje: 'Rol actualizado' });
         });
 
-        // obtener información de un usuario
+        // Get user info
         app.get('/api/users/:id', verificarToken, async (req, res) => {
             const userId = req.params.id;
 
@@ -334,17 +384,15 @@ async function main() {
             try {
                 objectId = new ObjectId(userId);
             } catch (error) {
-                return res.status(400).json({ mensaje: 'Invalid user ID format' });
+                return res.status(400).json({ mensaje: 'Formato de ID de usuario inválido' });
             }
 
             const usuario = await usersCollection.findOne({ _id: objectId }, { projection: { contraseña: 0 } });
             if (!usuario) {
-                return res.status(404).json({ mensaje: 'usuario no encontrado' });
+                return res.status(404).json({ mensaje: 'Usuario no encontrado' });
             }
             res.send(usuario);
         });
-
-
 
         app.listen(PORT, () => {
             console.log(`Servidor en puerto ${PORT}`);
@@ -355,4 +403,4 @@ async function main() {
     }
 }
 
-main();
+main()

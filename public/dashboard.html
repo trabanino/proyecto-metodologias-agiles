@@ -2,7 +2,6 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Proyectos</title>
     <link rel="stylesheet" href="css/dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -13,10 +12,8 @@
         <button class="add-btn"><i class="fas fa-plus"></i></button>
         <nav>
             <ul>
-                <li><button><i class="fas fa-tasks"></i></button></li>
-                <li><button><i class="fas fa-check"></i></button></li>
-                <li><button><i class="fas fa-users"></i></button></li>
-                <li><button><i class="fas fa-user-plus"></i></button></li>
+                <li><button id="notificationsBtn"><i class="fas fa-bell"></i></button></li>
+                <li><button id="joinProjectBtn"><i class="fas fa-user-plus"></i></button></li>
             </ul>
         </nav>
     </aside>
@@ -24,7 +21,6 @@
     <main>
         <header>
             <h1>Proyectos</h1>
-            <button class="back-btn" style="display: none;"><i class="fas fa-arrow-left"></i></button>
         </header>
 
         <section class="project-grid">
@@ -35,45 +31,47 @@
             <ul id="invitationsList"></ul>
         </section>
 
+        <section id="notificationsSection" style="display: none;">
+            <h2>Notificaciones</h2>
+            <ul id="notificationsList"></ul>
+        </section>
+
     </main>
 
-<div class="modal" id="projectModal">
-    <div class="modal-content">
-        <span class="close">&times;</span>
-        <h2 id="modal-title">Crear Proyecto</h2>
-        <form id="projectForm">
-            <label for="projectName">Nombre del Proyecto</label>
-            <input type="text" id="projectName" required>
-            <label for="projectDescription">Descripción</label>
-            <textarea id="projectDescription" required></textarea>
-            <label for="projectMembers">Invitar miembros (correos separados por comas)</label>
-            <input type="text" id="projectMembers" placeholder="correo1@example.com, correo2@example.com">
-            <button type="submit" id="saveProjectBtn">Guardar Proyecto</button>
-        </form>
+    <div class="modal" id="projectModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-title">Crear Proyecto</h2>
+            <form id="projectForm">
+                <label for="projectName">Nombre del Proyecto</label>
+                <input type="text" id="projectName" required>
+                <label for="projectDescription">Descripción</label>
+                <textarea id="projectDescription" required></textarea>
+                <label for="projectType">Tipo de Proyecto</label>
+                <select id="projectType" required>
+                    <option value="">Selecciona un tipo</option>
+                    <option value="kanban">Kanban</option>
+                    <option value="scrum">Agile Scrum</option>
+                </select>
+                <label for="projectMembers">Invitar miembros (correos separados por comas)</label>
+                <input type="text" id="projectMembers" placeholder="correo1@example.com, correo2@example.com">
+                <button type="submit" id="saveProjectBtn">Guardar Proyecto</button>
+            </form>
+        </div>
     </div>
-</div>
 
-<div class="modal" id="joinProjectModal">
-    <div class="modal-content">
-        <span class="close">&times;</span>
-        <h2>Unirse a Proyecto</h2>
-        <form id="joinProjectForm">
-            <label for="projectCode">Código del Proyecto</label>
-            <input type="text" id="projectCode" required>
-            <button type="submit" id="joinProjectSubmitBtn">Unirse</button>
-        </form>
+    <div class="modal" id="joinProjectModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Unirse a Proyecto</h2>
+            <form id="joinProjectForm">
+                <label for="projectCode">Código del Proyecto</label>
+                <input type="text" id="projectCode" required>
+                <button type="submit" id="joinProjectSubmitBtn">Unirse</button>
+            </form>
+        </div>
     </div>
-</div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            window.location.href = 'login';
-        }
-    });
-</script>
-
-<script src="scripts/dashboard.js"></script>
+    <script src="scripts/dashboard.js"></script>
 </body>
 </html>
