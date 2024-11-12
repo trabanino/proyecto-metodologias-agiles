@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     sprintsBtn.addEventListener('click', (e) => {
         e.preventDefault();
         // navegar a la página de sprints
-        alert('PENDIENTE: ver sprints no implementada todavía');
+        window.location.href = `/sprint_view.html?projectId=${projectId}`;
     });
 
     reportsBtn.addEventListener('click', (e) => {
@@ -287,7 +287,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         sprintsBtn.addEventListener('click', (e) => {
             e.preventDefault();
             // Navegar a la página de sprints
-            alert('PENDIENTE: ver sprints no implementada todavía');
+            window.location.href = `/sprint_view.html?projectId=${projectId}`;
         });
 
         reportsBtn.addEventListener('click', (e) => {
