@@ -49,6 +49,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const reportsBtn = document.getElementById('reportsBtn');
     const kanbanBtn = document.getElementById('kanbanBtn');
     const miembrosBtn = document.getElementById('miembrosBtn');
+    const plazos = document.getElementById('plazBtn');
+
 
     addSprintBtn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -275,7 +277,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const sprintsBtn = document.getElementById('sprintsBtn');
         const reportsBtn = document.getElementById('reportsBtn');
         const kanbanBtn = document.getElementById('kanbanBtn');
-        const plazBtn = document.getElementById('plazBtn');
 
         addSprintBtn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -301,58 +302,122 @@ document.addEventListener('DOMContentLoaded', async () => {
             window.location.href = `/kanban.html?projectId=${projectId}`;
         });
 
-        // Modal functionality
-        const modal = document.getElementById('deadlineModal');
-        const span = document.getElementsByClassName('close')[0];
-        const saveDeadlineBtn = document.getElementById('saveDeadlineBtn');
-        const deadlineInput = document.getElementById('deadline');
 
+
+
+    });
+
+    plazos.addEventListener('click', (e) => {
+        e.preventDefault();
+        //Funcion de plazos
+
+        const plazBtn = document.getElementById('plazBtn');
+        const modal = document.getElementById('deadlineModal');
+        const closeBtn = document.querySelector('.close');
+        const deadlineForm = document.getElementById('deadlineForm');
+        const deadlineDisplay = document.getElementById('deadlineDisplay');
+
+        // Store deadline data
+        let projectDeadline = {
+            projectName: '',
+            deadline: null
+        };
+
+        // Modal control functions
         plazBtn.addEventListener('click', (e) => {
             e.preventDefault();
             modal.style.display = 'block';
         });
 
-        span.onclick = function() {
+        closeBtn.addEventListener('click', () => {
             modal.style.display = 'none';
-        };
+        });
 
-        window.onclick = function(event) {
-            if (event.target == modal) {
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) {
                 modal.style.display = 'none';
-            }
-        };
-
-        saveDeadlineBtn.addEventListener('click', async (e) => {
-            e.preventDefault();
-            const deadline = deadlineInput.value;
-            if (!deadline) {
-                alert('Por favor, selecciona una fecha.');
-                return;
-            }
-
-            try {
-                const response = await fetch(`/api/projects/${projectId}/deadline`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': token
-                    },
-                    body: JSON.stringify({ deadline })
-                });
-
-                if (!response.ok) {
-                    alert('Error al guardar la fecha límite');
-                    return;
-                }
-
-                alert('Fecha límite guardada con éxito');
-                modal.style.display = 'none';
-            } catch (error) {
-                console.error('Error al guardar la fecha límite:', error);
-                alert('Error al guardar la fecha límite');
             }
         });
+
+        // Form submission handler
+        deadlineForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            // Get form values
+            const projectName = document.getElementById('projectName').value;
+            const deadlineDate = document.getElementById('deadlineDate').value;
+
+            // Store the deadline data
+            projectDeadline = {
+                projectName: projectName,
+                deadline: new Date(deadlineDate)
+            };
+
+            // Update display
+            updateDeadlineDisplay();
+
+            // Close modal
+            modal.style.display = 'none';
+
+            // Save to localStorage
+            localStorage.setItem('projectDeadline', JSON.stringify(projectDeadline));
+        });
+
+        // Function to update the deadline display
+        function updateDeadlineDisplay() {
+            const displayProjectName = document.getElementById('displayProjectName');
+            const displayDeadlineDate = document.getElementById('displayDeadlineDate');
+            const displayTimeRemaining = document.getElementById('displayTimeRemaining');
+
+            displayProjectName.textContent = projectDeadline.projectName;
+            displayDeadlineDate.textContent = projectDeadline.deadline.toLocaleDateString();
+
+            // Calculate and display time remaining
+            const timeRemaining = getTimeRemaining(projectDeadline.deadline);
+            displayTimeRemaining.textContent = timeRemaining;
+
+            // Show the deadline display section
+            deadlineDisplay.style.display = 'block';
+        }
+
+        // Function to calculate time remaining
+        function getTimeRemaining(deadline) {
+            const now = new Date();
+            const timeDiff = deadline - now;
+
+            if (timeDiff < 0) {
+                return 'Deadline passed';
+            }
+
+            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+            return `${days} days and ${hours} hours`;
+        }
+
+        // Load saved deadline on page load
+        window.addEventListener('load', () => {
+            const savedDeadline = localStorage.getItem('projectDeadline');
+            if (savedDeadline) {
+                projectDeadline = JSON.parse(savedDeadline);
+                projectDeadline.deadline = new Date(projectDeadline.deadline);
+                updateDeadlineDisplay();
+            }
+        });
+
+        // Update time remaining every minute
+        setInterval(() => {
+            if (projectDeadline.deadline) {
+                updateDeadlineDisplay();
+            }
+        }, 60000);
+
     });
+
+
+
+
+
 
 
 });
