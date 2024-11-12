@@ -1,120 +1,27 @@
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: rgb(131,58,180);
-    background: linear-gradient(90deg, rgba(131,58,180,1) 0%, rgba(253,29,29,1) 50%, rgba(252,164,66,1) 96%, rgba(252,176,69,1) 100%);
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-}
-header {
-    background-color: white;
-    color: #6a0d83;
-    padding: 20px 0;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    height: 100px;
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    width: 100%;
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 1000;
-}
-
-nav {
-    width: 100%;
-}
-
-nav ul {
-    list-style: none;
-    display: flex;
-    justify-content: flex-end;
-    gap: 20px;
-    align-items: center;
-}
-
-nav ul li {
-    position: relative;
-}
-
-nav ul li a {
-    color: #6a0d83;
-    text-decoration: none;
-    text-transform: uppercase;
-    padding: 10px 15px;
-    display: block;
-}
-
-nav ul li a:hover {
-    color: #ee5d6c;
-}
-
-.sidebar {
-    width: 80px;
-    background-color: #eaeaea;
-    position: fixed;
-    top: 100px;
-    left: 0;
-    height: calc(100vh - 100px);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 20px;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-    z-index: 999;
-}
-
-.sidebar a {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background-color: #c4c4c4;
-    color: white;
-    font-size: 24px;
-    margin-bottom: 15px;
-    transition: background-color 0.3s, transform 0.3s;
-    text-decoration: none;
-}
-
-.sidebar a:first-child {
-    background-color: #d35400;
-}
-
-.sidebar a i {
-    font-size: 20px;
-}
-
-.sidebar a:hover {
-    transform: scale(1.1);
-}
-
-h1{
-    margin-top: 120px;
-}
 .board {
     display: flex;
     gap: 15px;
     margin-top: 20px;
+    overflow-x: auto;
 }
+
 .column {
-    background-color: rgba(33, 33, 33, 0.7);
+    background-color: #ffffff;
     border-radius: 8px;
     width: 250px;
     padding: 15px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    box-sizing: border-box;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     position: relative;
+    flex-shrink: 0;
 }
+
 .column h2 {
     text-align: center;
     margin-bottom: 10px;
-    color: #fff;
+    color: #333;
 }
+
 .delete-column {
     position: absolute;
     top: 10px;
@@ -173,10 +80,11 @@ h1{
 .label-yellow { background-color: #fdd835; color: #000000; }
 .assignees {
     font-size: 0.9em;
-    color: #e0f7fa;
+    color: #333;
     margin-top: 5px;
 }
-.add-task, .add-column {
+
+.add-task {
     background-color: #757575;
     color: #ffffff;
     border: none;
@@ -187,24 +95,7 @@ h1{
     text-align: center;
     width: 100%;
 }
-.modal {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: #ffffff;
-    color: #000;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    z-index: 10;
-}
-.modal input, .modal textarea, .modal select {
-    width: 100%;
-    margin-bottom: 10px;
-    padding: 5px;
-}
+
 .overlay {
     display: none;
     position: fixed;
@@ -215,65 +106,112 @@ h1{
     background: rgba(0, 0, 0, 0.5);
     z-index: 5;
 }
-.add-column-container {
-    display: flex;
-    align-items: flex-start;
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 10;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #ffffff;
+    color: #000;
+    padding: 20px;
+    border-radius: 8px;
+    width: 400px;
+    max-height: 80%;
+    overflow-y: auto;
+}
+
+.modal h2 {
+    margin-top: 0;
+}
+
+.modal input,
+.modal textarea,
+.modal select {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 5px;
+    box-sizing: border-box;
+}
+
+.modal button {
+    background-color: #4caf50;
+    color: #ffffff;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.modal .close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.invitar-miembro {
     margin-top: 20px;
 }
 
-/* Estilo para el botón "+ Añadir Estado" */
-.add-column-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 250px;
+.invitar-miembro h3 {
+    margin-bottom: 10px;
+}
+
+#miembrosList {
+    list-style: none;
+    padding: 0;
+}
+
+#miembrosList li {
+    margin-bottom: 5px;
+}
+
+.sidebar nav ul li {
+    margin-bottom: 10px;
+}
+
+.sidebar nav ul li button {
+    background-color: #cfcfcf;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    border-radius: 45px;
     padding: 10px;
-    margin: 20px 0;
-    font-size: 16px;
-    font-weight: bold;
-    color: #fff;
-    background: linear-gradient(90deg, #4caf50, #2e7d32);
+}
+
+.sidebar nav ul li button:hover {
+    background-color: #616161;
+}
+
+#notificationBtn {
+    position: relative;
+}
+
+.notification-count {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: #e53935;
+    color: #ffffff;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 12px;
+}
+
+.delete-project-btn {
+    background-color: #d32f2f;
+    color: #ffffff;
     border: none;
-    border-radius: 8px;
+    border-radius: 5px;
     cursor: pointer;
-    transition: transform 0.3s ease, background 0.3s ease;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    padding: 10px;
 }
 
-.add-column-container:hover {
-    transform: scale(1.05);
-    background: linear-gradient(90deg, #388e3c, #1b5e20);
+.delete-project-btn:hover {
+    background-color: #c62828;
 }
-
-.add-column-container:active {
-    transform: scale(0.98);
-    background: linear-gradient(90deg, #2e7d32, #1b5e20);
-}
-
-/* Estilo para el botón "Generar Reporte de Avance" */
-button[onclick="generarReporte()"] {
-    display: inline-block;
-    padding: 10px 20px;
-    font-size: 16px;
-    font-weight: bold;
-    color: #fff;
-    background: linear-gradient(90deg, #ff9800, #f57c00);
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: transform 0.3s ease, background 0.3s ease;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    margin-top: 10px;
-}
-
-button[onclick="generarReporte()"]:hover {
-    transform: scale(1.05);
-    background: linear-gradient(90deg, #fb8c00, #e65100);
-}
-
-button[onclick="generarReporte()"]:active {
-    transform: scale(0.98);
-    background: linear-gradient(90deg, #e65100, #bf360c);
-}
-
-

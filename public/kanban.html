@@ -3,70 +3,88 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Tablero Kanban</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="css/navindex.css">
+    <title>Kanban</title>
+    <link rel="stylesheet" href="css/dashboard.css">
     <link rel="stylesheet" href="css/kanban.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
 <body>
-    <header>
+<div class="container">
+    <aside class="sidebar">
+        <button class="add-btn" onclick="addTaskFromSidebar()"><i class="fas fa-plus"></i></button>
         <nav>
-            <ul id="menulista">
-                <li><a href="home">Inicio</a></li>
-                <li><a href="#">Mas Informacion</a></li>
-                <li><a href="#">Conocenos</a></li>
-                <li><a href="#">Contacto</a></li>
+            <ul>
+                <li><button onclick="openAddColumnModal()"><i class="fas fa-columns"></i></button></li>
+                <li><button onclick="openMembersModal()"><i class="fas fa-users"></i></button></li>
+                <li><button onclick="toggleNotifications()" id="notificationBtn"><i class="fas fa-bell"></i><span id="notificationCount" class="notification-count"></span></button></li>
+                <li><button onclick="goBack()"><i class="fas fa-arrow-left"></i></button></li>
+                <li id="deleteProjectBtn" style="display: none;"><button onclick="confirmDeleteProject()"><i class="fas fa-trash"></i></button></li>
+                <li><button onclick="generateReport()"><i class="fas fa-chart-bar"></i></button></li>
             </ul>
         </nav>
-    </header>
-    <aside class="sidebar">
-        <a href="asignar_tareas.html"><i class="fas fa-plus"></i></a>
-        <a href="#"><i class="fas fa-tasks"></i></a>
-        <a href="#"><i class="fas fa-check"></i></a>
-        <a href="#"><i class="fas fa-users"></i></a>
-        <a href="#"><i class="fas fa-user-plus"></i></a>
     </aside>
-    <h1>Tablero Kanban</h1>
-    <div class="board">
-        <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <h2>Tareas Pendientes</h2>
-            <button class="delete-column" onclick="confirmDeleteColumn(this)">X</button>
-            <button class="add-task" onclick="addTask(this)">+ Añade una tarjeta</button>
+    <main>
+        <header>
+            <h1 id="projectName">Proyecto Kanban</h1>
+        </header>
+
+        <div class="board">
         </div>
-        <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <h2>En Progreso</h2>
-            <button class="delete-column" onclick="confirmDeleteColumn(this)">X</button>
-            <button class="add-task" onclick="addTask(this)">+ Añade una tarjeta</button>
-        </div>
-        <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <h2>Tareas Completadas</h2>
-            <button class="delete-column" onclick="confirmDeleteColumn(this)">X</button>
-            <button class="add-task" onclick="addTask(this)">+ Añade una tarjeta</button>
-        </div>
-    </div>
+    </main>
+</div>
 
-    <button class="add-column-container">+ Añadir Estado</button>
-    <button onclick="generarReporte()">Generar Reporte de Avance</button>
+<div class="overlay"></div>
 
-
-
-
-    <div class="overlay"></div>
-    <div class="modal">
-        <h2>Tarea</h2>
-        <input type="text" id="task-title" placeholder="Título de la tarea">
-        <textarea id="task-description" placeholder="Descripción"></textarea>
-        <select id="task-urgency">
-            <option value="label-red">Alta</option>
-            <option value="label-orange">Media</option>
-            <option value="label-yellow">Baja</option>
+<div class="modal" id="taskModal">
+    <h2>Tarea</h2>
+    <input type="text" id="task-title" placeholder="Título de la tarea">
+    <textarea id="task-description" placeholder="Descripción"></textarea>
+    <select id="task-urgency">
+        <option value="label-red">Alta</option>
+        <option value="label-orange">Media</option>
+        <option value="label-yellow">Baja</option>
+    </select>
+    <div>
+        <label for="task-assignees">Asignar a:</label>
+        <select id="task-assignees" multiple>
+            <!-- Project members will be populated here -->
         </select>
-        <input type="text" id="task-assignees" placeholder="Asignar a (separado por comas)">
-        <button onclick="saveTask()">Guardar</button>
     </div>
-    <script src="scripts/kanban.js"></script>
-</body>
+    <div>
+        <label for="task-notes">Notas:</label>
+        <textarea id="task-notes" placeholder="Agregar notas"></textarea>
+    </div>
+    <button onclick="saveTask()">Guardar</button>
+</div>
 
+<div class="modal" id="addColumnModal">
+    <h2>Agregar Estado</h2>
+    <input type="text" id="column-name" placeholder="Nombre del estado">
+    <button onclick="addNewColumn()">Agregar</button>
+</div>
+
+<div class="modal" id="membersModal">
+    <div class="modal-content">
+        <span class="close" onclick="closeMembersModal()">&times;</span>
+        <h2>Miembros del Proyecto</h2>
+        <ul id="miembrosList"></ul>
+        <div class="invitar-miembro">
+            <h3>Invitar Miembro</h3>
+            <input type="email" id="emailInvitar" placeholder="Correo del miembro">
+            <button id="invitarBtn">Invitar</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="notificationsModal">
+    <div class="modal-content">
+        <span class="close" onclick="closeNotificationsModal()">&times;</span>
+        <h2>Notificaciones</h2>
+        <ul id="notificationsList"></ul>
+    </div>
+</div>
+
+<script src="scripts/kanban.js"></script>
+</body>
 </html>

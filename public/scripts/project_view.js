@@ -47,7 +47,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const addSprintBtn = document.getElementById('addSprintBtn');
     const sprintsBtn = document.getElementById('sprintsBtn');
     const reportsBtn = document.getElementById('reportsBtn');
-    const kanbanBtn = document.getElementById('kanbanBtn');
     const miembrosBtn = document.getElementById('miembrosBtn');
     const plazos = document.getElementById('plazBtn');
 
@@ -62,12 +61,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
         // navegar a la página de sprints
         window.location.href = `/sprint_view.html?projectId=${projectId}`;
-    });
-
-    kanbanBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        // navegar a la página de Kanban con el ID del proyecto
-        window.location.href = `/kanban.html?projectId=${projectId}`;
     });
 
     // Obtener elementos del DOM para la sección de miembros
@@ -407,11 +400,4 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 60000);
 
     });
-
-
-
-
-
-
-
 });
