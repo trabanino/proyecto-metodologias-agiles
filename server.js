@@ -10,7 +10,46 @@ const jwtSecret = '8c20f7077ddcbf3131a328142c708c0ccde6323d353727681f36bfe7a1c64
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files before defining routes
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Routes for serving HTML files
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/home', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
+
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+app.get('/register', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'register.html'));
+});
+
+app.get('/proyecto', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'project_view.html'));
+});
+
+app.get('/proyecto/:id', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'project_view.html'));
+});
+
+app.get('/kanban', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'kanban.html'));
+});
+
+app.get('/kanban/:id', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'kanban.html'));
+});
 
 const url = 'mongodb://esen.trabanino.xyz:27017';
 const dbName = 'gestion_proyectos';
@@ -27,35 +66,8 @@ async function main() {
         const usersCollection = db.collection('usuarios');
         const projectsCollection = db.collection('proyectos');
         const tasksCollection = db.collection('tareas');
-
-        // Routes for serving HTML files
-        app.get('/', (req, res) => {
-            res.sendFile(path.join(__dirname, 'public', 'index.html'));
-        });
-
-        app.get('/home', (req, res) => {
-            res.sendFile(path.join(__dirname, 'public', 'index.html'));
-        });
-
-        app.get('/dashboard', (req, res) => {
-            res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
-        });
-
-        app.get('/login', (req, res) => {
-            res.sendFile(path.join(__dirname, 'public', 'login.html'));
-        });
-
-        app.get('/register', (req, res) => {
-            res.sendFile(path.join(__dirname, 'public', 'register.html'));
-        });
-
-        app.get('/proyecto/:id', (req, res) => {
-            res.sendFile(path.join(__dirname, 'public', 'project_view.html'));
-        });
-
-        app.get('/kanban', (req, res) => {
-            res.sendFile(path.join(__dirname, 'public', 'kanban.html'));
-        });
+        const sprintsCollection = db.collection('sprints');
+        const userStoriesCollection = db.collection('user_stories');
 
         // User registration
         app.post('/api/register', async (req, res) => {
@@ -133,7 +145,9 @@ async function main() {
                 miembros,
                 codigo: generateProjectCode(),
                 tipo: tipo || 'kanban',
-                columns
+                columns,
+                invitacionesPendientes: [],
+                admins: []
             };
 
             const result = await projectsCollection.insertOne(nuevoProyecto);
@@ -168,11 +182,22 @@ async function main() {
         app.delete('/api/projects/:id', verificarToken, async (req, res) => {
             const projectId = req.params.id;
             const userId = req.usuario.id;
-            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
+
+            let projectObjectId;
+            try {
+                projectObjectId = new ObjectId(projectId);
+            } catch (error) {
+                return res.status(400).json({ mensaje: 'ID de proyecto inválido' });
+            }
+
+            const project = await projectsCollection.findOne({ _id: projectObjectId });
+            if (!project) {
+                return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
+            }
             if (project.owner.toString() !== userId) {
                 return res.status(403).json({ mensaje: 'No tienes permiso para eliminar este proyecto' });
             }
-            await projectsCollection.deleteOne({ _id: new ObjectId(projectId) });
+            await projectsCollection.deleteOne({ _id: projectObjectId });
             res.json({ mensaje: 'Proyecto eliminado' });
         });
 
@@ -180,7 +205,15 @@ async function main() {
         app.get('/api/projects/:id', verificarToken, async (req, res) => {
             const projectId = req.params.id;
             const userId = req.usuario.id;
-            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
+
+            let projectObjectId;
+            try {
+                projectObjectId = new ObjectId(projectId);
+            } catch (error) {
+                return res.status(400).json({ mensaje: 'ID de proyecto inválido' });
+            }
+
+            const project = await projectsCollection.findOne({ _id: projectObjectId });
             if (!project) {
                 return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
             }
@@ -196,7 +229,14 @@ async function main() {
             const userId = req.usuario.id;
             const { email } = req.body;
 
-            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
+            let projectObjectId;
+            try {
+                projectObjectId = new ObjectId(projectId);
+            } catch (error) {
+                return res.status(400).json({ mensaje: 'ID de proyecto inválido' });
+            }
+
+            const project = await projectsCollection.findOne({ _id: projectObjectId });
             if (!project) {
                 return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
             }
@@ -229,7 +269,14 @@ async function main() {
             const projectId = req.params.projectId;
             const userId = req.usuario.id;
 
-            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
+            let projectObjectId;
+            try {
+                projectObjectId = new ObjectId(projectId);
+            } catch (error) {
+                return res.status(400).json({ mensaje: 'ID de proyecto inválido' });
+            }
+
+            const project = await projectsCollection.findOne({ _id: projectObjectId });
             if (!project) {
                 return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
             }
@@ -248,12 +295,19 @@ async function main() {
             res.json({ mensaje: 'Invitación aceptada' });
         });
 
-        // Decline invitation
-        app.post('/api/invites/:projectId/decline', verificarToken, async (req, res) => {
+        // Reject invitation
+        app.post('/api/invites/:projectId/reject', verificarToken, async (req, res) => {
             const projectId = req.params.projectId;
             const userId = req.usuario.id;
 
-            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
+            let projectObjectId;
+            try {
+                projectObjectId = new ObjectId(projectId);
+            } catch (error) {
+                return res.status(400).json({ mensaje: 'ID de proyecto inválido' });
+            }
+
+            const project = await projectsCollection.findOne({ _id: projectObjectId });
             if (!project) {
                 return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
             }
@@ -269,61 +323,15 @@ async function main() {
             res.json({ mensaje: 'Invitación rechazada' });
         });
 
-        // Delete member from project
-        app.delete('/api/projects/:projectId/members/:memberId', verificarToken, async (req, res) => {
-            const projectId = req.params.projectId;
-            const memberId = req.params.memberId;
+        // Get notifications
+        app.get('/api/notifications', verificarToken, async (req, res) => {
             const userId = req.usuario.id;
-
-            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
-            if (!project) {
-                return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
-            }
-            if (project.owner.toString() !== userId && (!project.admins || !project.admins.includes(userId))) {
-                return res.status(403).json({ mensaje: 'No tienes permiso para eliminar miembros' });
-            }
-            if (project.owner.toString() === memberId) {
-                return res.status(400).json({ mensaje: 'No puedes eliminar al owner del proyecto' });
-            }
-
-            await projectsCollection.updateOne(
-                { _id: project._id },
-                { $pull: { miembros: memberId, admins: memberId } }
-            );
-
-            res.json({ mensaje: 'Miembro eliminado' });
-        });
-
-        // Assign role to member
-        app.post('/api/projects/:projectId/members/:memberId/role', verificarToken, async (req, res) => {
-            const projectId = req.params.projectId;
-            const memberId = req.params.memberId;
-            const userId = req.usuario.id;
-            const { role } = req.body;
-
-            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
-            if (!project) {
-                return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
-            }
-            if (project.owner.toString() !== userId) {
-                return res.status(403).json({ mensaje: 'Solo el owner puede asignar roles' });
-            }
-
-            if (role === 'admin') {
-                await projectsCollection.updateOne(
-                    { _id: project._id },
-                    { $addToSet: { admins: memberId } }
-                );
-            } else if (role === 'miembro') {
-                await projectsCollection.updateOne(
-                    { _id: project._id },
-                    { $pull: { admins: memberId } }
-                );
-            } else {
-                return res.status(400).json({ mensaje: 'Rol inválido' });
-            }
-
-            res.json({ mensaje: 'Rol actualizado' });
+            const projects = await projectsCollection.find({ invitacionesPendientes: userId }).toArray();
+            const notifications = projects.map(project => ({
+                message: `Invitación al proyecto: ${project.nombre}`,
+                projectId: project._id
+            }));
+            res.send(notifications);
         });
 
         // Get user details
@@ -349,7 +357,14 @@ async function main() {
             const projectId = req.params.projectId;
             const userId = req.usuario.id;
 
-            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
+            let projectObjectId;
+            try {
+                projectObjectId = new ObjectId(projectId);
+            } catch (error) {
+                return res.status(400).json({ mensaje: 'ID de proyecto inválido' });
+            }
+
+            const project = await projectsCollection.findOne({ _id: projectObjectId });
             if (!project) {
                 return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
             }
@@ -367,7 +382,14 @@ async function main() {
             const userId = req.usuario.id;
             const { title, description, notes, assignees, urgency, status } = req.body;
 
-            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
+            let projectObjectId;
+            try {
+                projectObjectId = new ObjectId(projectId);
+            } catch (error) {
+                return res.status(400).json({ mensaje: 'ID de proyecto inválido' });
+            }
+
+            const project = await projectsCollection.findOne({ _id: projectObjectId });
             if (!project) {
                 return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
             }
@@ -397,7 +419,15 @@ async function main() {
             const userId = req.usuario.id;
             const updateFields = req.body;
 
-            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
+            let projectObjectId, taskObjectId;
+            try {
+                projectObjectId = new ObjectId(projectId);
+                taskObjectId = new ObjectId(taskId);
+            } catch (error) {
+                return res.status(400).json({ mensaje: 'ID inválido' });
+            }
+
+            const project = await projectsCollection.findOne({ _id: projectObjectId });
             if (!project) {
                 return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
             }
@@ -406,7 +436,7 @@ async function main() {
             }
 
             await tasksCollection.updateOne(
-                { _id: new ObjectId(taskId) },
+                { _id: taskObjectId },
                 { $set: updateFields }
             );
 
@@ -419,7 +449,15 @@ async function main() {
             const taskId = req.params.taskId;
             const userId = req.usuario.id;
 
-            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
+            let projectObjectId, taskObjectId;
+            try {
+                projectObjectId = new ObjectId(projectId);
+                taskObjectId = new ObjectId(taskId);
+            } catch (error) {
+                return res.status(400).json({ mensaje: 'ID inválido' });
+            }
+
+            const project = await projectsCollection.findOne({ _id: projectObjectId });
             if (!project) {
                 return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
             }
@@ -427,20 +465,9 @@ async function main() {
                 return res.status(403).json({ mensaje: 'No tienes acceso a este proyecto' });
             }
 
-            await tasksCollection.deleteOne({ _id: new ObjectId(taskId) });
+            await tasksCollection.deleteOne({ _id: taskObjectId });
 
             res.json({ mensaje: 'Tarea eliminada' });
-        });
-
-        // Get notifications
-        app.get('/api/notifications', verificarToken, async (req, res) => {
-            const userId = req.usuario.id;
-            const projects = await projectsCollection.find({ invitacionesPendientes: userId }).toArray();
-            const notifications = projects.map(project => ({
-                message: `Invitación al proyecto: ${project.nombre}`,
-                projectId: project._id
-            }));
-            res.send(notifications);
         });
 
         // Add new column to project
@@ -449,7 +476,14 @@ async function main() {
             const userId = req.usuario.id;
             const { columnName } = req.body;
 
-            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
+            let projectObjectId;
+            try {
+                projectObjectId = new ObjectId(projectId);
+            } catch (error) {
+                return res.status(400).json({ mensaje: 'ID de proyecto inválido' });
+            }
+
+            const project = await projectsCollection.findOne({ _id: projectObjectId });
             if (!project) {
                 return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
             }
@@ -465,32 +499,20 @@ async function main() {
             res.json({ mensaje: 'Columna añadida' });
         });
 
-        // Delete tasks by status
-        app.delete('/api/projects/:projectId/tasks', verificarToken, async (req, res) => {
-            const projectId = req.params.projectId;
-            const userId = req.usuario.id;
-            const { status } = req.body;
-
-            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
-            if (!project) {
-                return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
-            }
-            if (!project.miembros.includes(userId)) {
-                return res.status(403).json({ mensaje: 'No tienes acceso a este proyecto' });
-            }
-
-            await tasksCollection.deleteMany({ projectId, status });
-
-            res.json({ mensaje: 'Tareas eliminadas' });
-        });
-
         // Delete column from project
         app.delete('/api/projects/:projectId/columns', verificarToken, async (req, res) => {
             const projectId = req.params.projectId;
             const userId = req.usuario.id;
             const { columnName } = req.body;
 
-            const project = await projectsCollection.findOne({ _id: new ObjectId(projectId) });
+            let projectObjectId;
+            try {
+                projectObjectId = new ObjectId(projectId);
+            } catch (error) {
+                return res.status(400).json({ mensaje: 'ID de proyecto inválido' });
+            }
+
+            const project = await projectsCollection.findOne({ _id: projectObjectId });
             if (!project) {
                 return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
             }
@@ -504,6 +526,181 @@ async function main() {
             );
 
             res.json({ mensaje: 'Columna eliminada' });
+        });
+
+        // Delete tasks by status
+        app.delete('/api/projects/:projectId/tasks', verificarToken, async (req, res) => {
+            const projectId = req.params.projectId;
+            const userId = req.usuario.id;
+            const { status } = req.body;
+
+            let projectObjectId;
+            try {
+                projectObjectId = new ObjectId(projectId);
+            } catch (error) {
+                return res.status(400).json({ mensaje: 'ID de proyecto inválido' });
+            }
+
+            const project = await projectsCollection.findOne({ _id: projectObjectId });
+            if (!project) {
+                return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
+            }
+            if (!project.miembros.includes(userId)) {
+                return res.status(403).json({ mensaje: 'No tienes acceso a este proyecto' });
+            }
+
+            await tasksCollection.deleteMany({ projectId, status });
+
+            res.json({ mensaje: 'Tareas eliminadas' });
+        });
+
+        // Get sprints
+        app.get('/api/projects/:projectId/sprints', verificarToken, async (req, res) => {
+            const projectId = req.params.projectId;
+            const userId = req.usuario.id;
+
+            let projectObjectId;
+            try {
+                projectObjectId = new ObjectId(projectId);
+            } catch (error) {
+                return res.status(400).json({ mensaje: 'ID de proyecto inválido' });
+            }
+
+            const project = await projectsCollection.findOne({ _id: projectObjectId });
+            if (!project) {
+                return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
+            }
+            if (!project.miembros.includes(userId)) {
+                return res.status(403).json({ mensaje: 'No tienes acceso a este proyecto' });
+            }
+
+            const sprints = await sprintsCollection.find({ projectId }).toArray();
+            for (const sprint of sprints) {
+                sprint.userStories = await userStoriesCollection.find({ sprintId: sprint._id.toString() }).toArray();
+            }
+
+            res.send(sprints);
+        });
+
+        // Create sprint
+        app.post('/api/projects/:projectId/sprints', verificarToken, async (req, res) => {
+            const projectId = req.params.projectId;
+            const userId = req.usuario.id;
+            const { name, startDate, endDate } = req.body;
+
+            let projectObjectId;
+            try {
+                projectObjectId = new ObjectId(projectId);
+            } catch (error) {
+                return res.status(400).json({ mensaje: 'ID de proyecto inválido' });
+            }
+
+            const project = await projectsCollection.findOne({ _id: projectObjectId });
+            if (!project) {
+                return res.status(404).json({ mensaje: 'Proyecto no encontrado' });
+            }
+            if (!project.miembros.includes(userId)) {
+                return res.status(403).json({ mensaje: 'No tienes acceso a este proyecto' });
+            }
+
+            const newSprint = {
+                projectId,
+                name,
+                startDate: new Date(startDate),
+                endDate: new Date(endDate)
+            };
+
+            await sprintsCollection.insertOne(newSprint);
+            res.json({ mensaje: 'Sprint creado' });
+        });
+
+        // Create user story
+        app.post('/api/projects/:projectId/sprints/:sprintId/userstories', verificarToken, async (req, res) => {
+            const projectId = req.params.projectId;
+            const sprintId = req.params.sprintId;
+            const userId = req.usuario.id;
+            const { title, description, priority, assignees } = req.body;
+
+            let sprintObjectId;
+            try {
+                sprintObjectId = new ObjectId(sprintId);
+            } catch (error) {
+                return res.status(400).json({ mensaje: 'ID de sprint inválido' });
+            }
+
+            const sprint = await sprintsCollection.findOne({ _id: sprintObjectId, projectId });
+            if (!sprint) {
+                return res.status(404).json({ mensaje: 'Sprint no encontrado' });
+            }
+
+            const newUserStory = {
+                sprintId,
+                title,
+                description,
+                priority,
+                assignees: Array.isArray(assignees) ? assignees : []
+            };
+
+            await userStoriesCollection.insertOne(newUserStory);
+            res.json({ mensaje: 'User Story creada' });
+        });
+
+        // Get user story
+        app.get('/api/projects/:projectId/sprints/:sprintId/userstories/:userStoryId', verificarToken, async (req, res) => {
+            const { projectId, sprintId, userStoryId } = req.params;
+            const userId = req.usuario.id;
+
+            let userStoryObjectId;
+            try {
+                userStoryObjectId = new ObjectId(userStoryId);
+            } catch (error) {
+                return res.status(400).json({ mensaje: 'ID de User Story inválido' });
+            }
+
+            const userStory = await userStoriesCollection.findOne({ _id: userStoryObjectId, sprintId });
+            if (!userStory) {
+                return res.status(404).json({ mensaje: 'User Story no encontrada' });
+            }
+
+            res.send(userStory);
+        });
+
+        // Update user story
+        app.put('/api/projects/:projectId/sprints/:sprintId/userstories/:userStoryId', verificarToken, async (req, res) => {
+            const { projectId, sprintId, userStoryId } = req.params;
+            const userId = req.usuario.id;
+            const updateFields = req.body;
+
+            let userStoryObjectId;
+            try {
+                userStoryObjectId = new ObjectId(userStoryId);
+            } catch (error) {
+                return res.status(400).json({ mensaje: 'ID de User Story inválido' });
+            }
+
+            await userStoriesCollection.updateOne(
+                { _id: userStoryObjectId, sprintId },
+                { $set: updateFields }
+            );
+
+            res.json({ mensaje: 'User Story actualizada' });
+        });
+
+        // Delete user story
+        app.delete('/api/projects/:projectId/sprints/:sprintId/userstories/:userStoryId', verificarToken, async (req, res) => {
+            const { projectId, sprintId, userStoryId } = req.params;
+            const userId = req.usuario.id;
+
+            let userStoryObjectId;
+            try {
+                userStoryObjectId = new ObjectId(userStoryId);
+            } catch (error) {
+                return res.status(400).json({ mensaje: 'ID de User Story inválido' });
+            }
+
+            await userStoriesCollection.deleteOne({ _id: userStoryObjectId, sprintId });
+
+            res.json({ mensaje: 'User Story eliminada' });
         });
 
         // Start the server

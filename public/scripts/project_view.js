@@ -1,156 +1,411 @@
-let token;
-let projectId;
+let currentUserStory = null;
+let isCreatingNewUserStory = false;
+let targetSprint = null;
+const token = localStorage.getItem('token');
+let projectMembers = [];
+let isOwner = false;
 
-document.addEventListener('DOMContentLoaded', async () => {
-    token = localStorage.getItem('token');
-    if (!token) {
-        window.location.href = '/login';
+if (!token) {
+    window.location.href = '/login';
+}
+
+// Extract projectId from the URL path
+const projectId = window.location.pathname.split('/').pop();
+
+async function loadProjectView() {
+    try {
+        const projectResponse = await fetch(`/api/projects/${projectId}`, {
+            headers: {
+                'Authorization': token
+            }
+        });
+        if (!projectResponse.ok) {
+            alert('Error al obtener detalles del proyecto');
+            return;
+        }
+        const project = await projectResponse.json();
+        document.getElementById('projectName').textContent = project.nombre;
+
+        // Check if the user is the owner
+        const userId = parseJwt(token).id;
+        isOwner = project.owner === userId;
+
+        // Show delete project button if owner
+        if (isOwner) {
+            document.getElementById('deleteProjectBtn').style.display = 'block';
+        }
+
+        // Load project members
+        projectMembers = [];
+        for (const miembroId of project.miembros) {
+            const usuarioResponse = await fetch(`/api/users/${miembroId}`, {
+                headers: {
+                    'Authorization': token
+                }
+            });
+            if (!usuarioResponse.ok) {
+                console.error('Error fetching user:', miembroId);
+                continue;
+            }
+            const usuario = await usuarioResponse.json();
+            projectMembers.push({ id: usuario._id, nombre: usuario.nombre });
+        }
+
+        // Load sprints
+        const sprintsResponse = await fetch(`/api/projects/${projectId}/sprints`, {
+            headers: {
+                'Authorization': token
+            }
+        });
+        if (!sprintsResponse.ok) {
+            alert('Error al obtener sprints del proyecto');
+            return;
+        }
+        const sprints = await sprintsResponse.json();
+
+        renderSprints(sprints);
+
+        // Load notifications
+        loadNotifications();
+
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al cargar la vista del proyecto');
+    }
+}
+
+function renderSprints(sprints) {
+    const sprintsContainer = document.querySelector('.sprints');
+    sprintsContainer.innerHTML = '';
+
+    sprints.forEach(sprint => {
+        const sprintElement = document.createElement('div');
+        sprintElement.className = 'sprint';
+
+        sprintElement.innerHTML = `
+            <h2>${sprint.name}</h2>
+            <p>Inicio: ${new Date(sprint.startDate).toLocaleDateString()}</p>
+            <p>Fin: ${new Date(sprint.endDate).toLocaleDateString()}</p>
+            <button class="add-user-story" onclick="addUserStory(this, '${sprint._id}')">+ Añadir User Story</button>
+        `;
+
+        const userStoriesContainer = document.createElement('div');
+        userStoriesContainer.className = 'user-stories';
+
+        sprint.userStories.forEach(userStory => {
+            const userStoryElement = document.createElement('div');
+            userStoryElement.className = 'user-story';
+            userStoryElement.setAttribute('data-user-story-id', userStory._id);
+            userStoryElement.innerHTML = `
+                <h3>${userStory.title}</h3>
+                <p>${userStory.description}</p>
+                <p>Prioridad: ${userStory.priority}</p>
+                <button class="edit-user-story" onclick="openEditUserStoryModal('${sprint._id}', '${userStory._id}')">✏️</button>
+                <button class="delete-user-story" onclick="confirmDeleteUserStory('${sprint._id}', '${userStory._id}')">🗑️</button>
+            `;
+            userStoriesContainer.appendChild(userStoryElement);
+        });
+
+        sprintElement.appendChild(userStoriesContainer);
+        sprintsContainer.appendChild(sprintElement);
+    });
+}
+
+loadProjectView();
+
+function openAddSprintModal() {
+    document.getElementById("addSprintModal").style.display = "block";
+    document.querySelector(".overlay").style.display = "block";
+}
+
+function closeAddSprintModal() {
+    document.getElementById("addSprintModal").style.display = "none";
+    document.querySelector(".overlay").style.display = "none";
+}
+
+async function addNewSprint() {
+    const name = document.getElementById("sprint-name").value;
+    const startDate = document.getElementById("sprint-start-date").value;
+    const endDate = document.getElementById("sprint-end-date").value;
+
+    if (!name || !startDate || !endDate) {
+        alert('Todos los campos son obligatorios');
+        return;
     }
 
-    projectId = window.location.pathname.split('/').pop();
+    try {
+        const response = await fetch(`/api/projects/${projectId}/sprints`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token
+            },
+            body: JSON.stringify({ name, startDate, endDate })
+        });
+        if (!response.ok) {
+            alert('Error al añadir el sprint');
+            return;
+        }
+        loadProjectView();
+        closeAddSprintModal();
+        document.getElementById("sprint-name").value = '';
+        document.getElementById("sprint-start-date").value = '';
+        document.getElementById("sprint-end-date").value = '';
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al añadir el sprint');
+    }
+}
 
-    const projectTitle = document.getElementById('projectTitle');
-    const projectDescription = document.getElementById('projectDescription');
+function addUserStory(button, sprintId) {
+    isCreatingNewUserStory = true;
+    currentUserStory = null;
+    targetSprint = sprintId;
+    openUserStoryModal();
+}
 
-    async function loadProjectDetails() {
+function openUserStoryModal() {
+    // Set default values
+    document.getElementById("user-story-title").value = currentUserStory ? currentUserStory.title : "";
+    document.getElementById("user-story-description").value = currentUserStory ? currentUserStory.description : "";
+    document.getElementById("user-story-priority").value = currentUserStory ? currentUserStory.priority : "media";
+
+    // Populate assignees select
+    const assigneesSelect = document.getElementById("user-story-assignees");
+    assigneesSelect.innerHTML = '';
+    projectMembers.forEach(member => {
+        const option = document.createElement('option');
+        option.value = member.id;
+        option.textContent = member.nombre;
+        assigneesSelect.appendChild(option);
+    });
+
+    if (currentUserStory) {
+        const assignedMemberIds = currentUserStory.assignees || [];
+        for (let option of assigneesSelect.options) {
+            if (assignedMemberIds.includes(option.value)) {
+                option.selected = true;
+            }
+        }
+    }
+
+    document.getElementById("addUserStoryModal").style.display = "block";
+    document.querySelector(".overlay").style.display = "block";
+}
+
+function closeUserStoryModal() {
+    document.getElementById("addUserStoryModal").style.display = "none";
+    document.querySelector(".overlay").style.display = "none";
+    currentUserStory = null;
+    isCreatingNewUserStory = false;
+    targetSprint = null;
+}
+
+async function saveUserStory() {
+    const title = document.getElementById("user-story-title").value;
+    const description = document.getElementById("user-story-description").value;
+    const priority = document.getElementById("user-story-priority").value;
+    const assigneesSelect = document.getElementById("user-story-assignees");
+    const assignees = Array.from(assigneesSelect.selectedOptions).map(option => option.value);
+
+    if (!title || !description) {
+        alert('El título y la descripción son obligatorios');
+        return;
+    }
+
+    const userStoryData = {
+        title,
+        description,
+        priority,
+        assignees
+    };
+
+    try {
+        if (isCreatingNewUserStory) {
+            const response = await fetch(`/api/projects/${projectId}/sprints/${targetSprint}/userstories`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token
+                },
+                body: JSON.stringify(userStoryData)
+            });
+            if (!response.ok) {
+                alert('Error al crear la User Story');
+                return;
+            }
+            loadProjectView();
+        } else if (currentUserStory) {
+            const response = await fetch(`/api/projects/${projectId}/sprints/${targetSprint}/userstories/${currentUserStory._id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token
+                },
+                body: JSON.stringify(userStoryData)
+            });
+            if (!response.ok) {
+                alert('Error al actualizar la User Story');
+                return;
+            }
+            loadProjectView();
+        }
+        closeUserStoryModal();
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al guardar la User Story');
+    }
+}
+
+async function openEditUserStoryModal(sprintId, userStoryId) {
+    targetSprint = sprintId;
+    try {
+        const response = await fetch(`/api/projects/${projectId}/sprints/${sprintId}/userstories/${userStoryId}`, {
+            headers: {
+                'Authorization': token
+            }
+        });
+        if (!response.ok) {
+            alert('Error al obtener la User Story');
+            return;
+        }
+        currentUserStory = await response.json();
+        isCreatingNewUserStory = false;
+        openUserStoryModal();
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al cargar la User Story');
+    }
+}
+
+async function confirmDeleteUserStory(sprintId, userStoryId) {
+    const confirmed = confirm("¿Estás seguro que deseas eliminar esta User Story?");
+    if (confirmed) {
+        try {
+            const response = await fetch(`/api/projects/${projectId}/sprints/${sprintId}/userstories/${userStoryId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': token
+                }
+            });
+            if (!response.ok) {
+                alert('Error al eliminar la User Story');
+                return;
+            }
+            loadProjectView();
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al eliminar la User Story');
+        }
+    }
+}
+
+function goBack() {
+    window.location.href = '/dashboard';
+}
+
+function toggleNotifications() {
+    const notificationsModal = document.getElementById('notificationsModal');
+    if (notificationsModal.style.display === 'block') {
+        closeNotificationsModal();
+    } else {
+        openNotificationsModal();
+    }
+}
+
+function openNotificationsModal() {
+    document.getElementById('notificationsModal').style.display = 'block';
+    document.querySelector('.overlay').style.display = 'block';
+}
+
+function closeNotificationsModal() {
+    document.getElementById('notificationsModal').style.display = 'none';
+    document.querySelector('.overlay').style.display = 'none';
+}
+
+async function loadNotifications() {
+    try {
+        const response = await fetch('/api/notifications', {
+            headers: {
+                'Authorization': token
+            }
+        });
+        if (!response.ok) {
+            console.error('Error fetching notifications');
+            return;
+        }
+        const notifications = await response.json();
+        const notificationsList = document.getElementById('notificationsList');
+        notificationsList.innerHTML = '';
+        notifications.forEach(notification => {
+            const li = document.createElement('li');
+            li.textContent = notification.message;
+            notificationsList.appendChild(li);
+        });
+        const notificationCount = document.getElementById('notificationCount');
+        notificationCount.textContent = notifications.length > 0 ? notifications.length : '';
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+function openMembersModal() {
+    document.getElementById('membersModal').style.display = 'block';
+    document.querySelector('.overlay').style.display = 'block';
+    loadMembers();
+}
+
+function closeMembersModal() {
+    document.getElementById('membersModal').style.display = 'none';
+    document.querySelector('.overlay').style.display = 'none';
+}
+
+async function loadMembers() {
+    const miembrosList = document.getElementById('miembrosList');
+    miembrosList.innerHTML = '';
+    try {
         const response = await fetch(`/api/projects/${projectId}`, {
             headers: {
                 'Authorization': token
             }
         });
-
-        if (response.status === 403) {
-            alert('No tienes acceso a este proyecto');
-            window.location.href = '/dashboard';
+        if (!response.ok) {
+            alert('Error al obtener detalles del proyecto');
             return;
         }
-
         const project = await response.json();
-
-        projectTitle.textContent = project.nombre;
-        projectDescription.textContent = project.descripcion;
-
-        loadMiembros(project);
-    }
-
-    loadProjectDetails();
-
-    const backBtn = document.getElementById('backBtn');
-
-    backBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        window.history.back();
-    });
-
-    const addSprintBtn = document.getElementById('addSprintBtn');
-    const sprintsBtn = document.getElementById('sprintsBtn');
-    const reportsBtn = document.getElementById('reportsBtn');
-    const kanbanBtn = document.getElementById('kanbanBtn');
-    const miembrosBtn = document.getElementById('miembrosBtn');
-    const plazBtn = document.getElementById('plazBtn');
-
-    addSprintBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        alert('PENDIENTE: añadir sprint no implementada todavía');
-    });
-
-    sprintsBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        alert('PENDIENTE: ver sprints no implementada todavía');
-    });
-
-    reportsBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        alert('PENDIENTE: ver reportes no implementada todavía');
-    });
-
-    kanbanBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        window.location.href = `/kanban.html?projectId=${projectId}`;
-    });
-
-    const miembrosSection = document.getElementById('miembrosSection');
-    const projectMenu = document.getElementById('projectMenu');
-    const miembrosList = document.getElementById('miembrosList');
-    const emailInvitar = document.getElementById('emailInvitar');
-    const invitarBtn = document.getElementById('invitarBtn');
-    const volverMenuBtn = document.getElementById('volverMenuBtn');
-
-    miembrosBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        projectMenu.style.display = 'none';
-        miembrosSection.style.display = 'block';
-
-        document.querySelectorAll('.project-menu ul li a').forEach(link => {
-            link.classList.remove('active');
-        });
-
-        miembrosBtn.classList.add('active');
-    });
-
-    volverMenuBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        miembrosSection.style.display = 'none';
-        projectMenu.style.display = 'block';
-
-        miembrosBtn.classList.remove('active');
-    });
-
-    async function loadMiembros(project) {
-        const ownerId = project.owner;
-        const admins = project.admins || [];
-        miembrosList.innerHTML = '';
         for (const miembroId of project.miembros) {
-            const response = await fetch(`/api/users/${miembroId}`, {
+            const usuarioResponse = await fetch(`/api/users/${miembroId}`, {
                 headers: {
                     'Authorization': token
                 }
             });
-
-            if (!response.ok) {
-                console.error(`Error fetching user ${miembroId}`);
+            if (!usuarioResponse.ok) {
+                console.error('Error fetching user:', miembroId);
                 continue;
             }
-
-            const usuario = await response.json();
-
+            const usuario = await usuarioResponse.json();
             const li = document.createElement('li');
-            let role = '';
-            if (miembroId === ownerId) {
-                role = 'Propietario';
-            } else if (admins.includes(miembroId)) {
-                role = 'Administrador';
-            } else {
-                role = 'Miembro';
+            li.textContent = `${usuario.nombre} (${usuario.correo})`;
+            if (project.owner === miembroId) {
+                li.textContent += ' (Propietario)';
             }
-
-            li.innerHTML = `<span>${usuario.nombre} (${usuario.correo}) - ${role}</span>`;
-
-            if (miembroId !== ownerId) {
-                const eliminarBtn = document.createElement('button');
-                eliminarBtn.textContent = 'Eliminar';
-                eliminarBtn.addEventListener('click', () => eliminarMiembro(miembroId));
-
-                const esAdmin = admins.includes(miembroId);
-                const rolBtn = document.createElement('button');
-                rolBtn.textContent = esAdmin ? 'Quitar Admin' : 'Hacer Admin';
-                rolBtn.addEventListener('click', () => asignarRol(miembroId, esAdmin ? 'miembro' : 'admin'));
-
-                li.appendChild(eliminarBtn);
-                li.appendChild(rolBtn);
-            }
-
             miembrosList.appendChild(li);
         }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al cargar los miembros del proyecto');
+    }
+}
+
+document.getElementById('invitarBtn').addEventListener('click', async () => {
+    const email = document.getElementById('emailInvitar').value;
+    if (!email) {
+        alert('Por favor, ingresa un correo');
+        return;
     }
 
-    invitarBtn.addEventListener('click', async () => {
-        const email = emailInvitar.value;
-        if (!email) {
-            alert('Por favor, ingresa un correo');
-            return;
-        }
-
+    try {
         const response = await fetch(`/api/projects/${projectId}/invite`, {
             method: 'POST',
             headers: {
@@ -163,99 +418,60 @@ document.addEventListener('DOMContentLoaded', async () => {
         const resultado = await response.json();
         if (response.ok) {
             alert('Invitación enviada');
-            emailInvitar.value = '';
+            document.getElementById('emailInvitar').value = '';
+            loadMembers();
         } else {
             alert(resultado.mensaje || 'Error al invitar miembro');
         }
-    });
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al invitar miembro');
+    }
+});
 
-    async function eliminarMiembro(miembroId) {
-        const confirmar = confirm('¿Estás seguro de eliminar este miembro?');
-        if (!confirmar) return;
+function confirmDeleteProject() {
+    const projectName = document.getElementById('projectName').textContent;
+    const inputName = prompt(`Para confirmar, por favor ingresa el nombre del proyecto: "${projectName}"`);
+    if (inputName === projectName) {
+        deleteProject();
+    } else {
+        alert('El nombre ingresado no coincide. Operación cancelada.');
+    }
+}
 
-        const response = await fetch(`/api/projects/${projectId}/members/${miembroId}`, {
+async function deleteProject() {
+    try {
+        const response = await fetch(`/api/projects/${projectId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': token
             }
         });
-
-        const resultado = await response.json();
-        if (response.ok) {
-            alert('Miembro eliminado');
-            location.reload();
-        } else {
-            alert(resultado.mensaje || 'Error al eliminar miembro');
-        }
-    }
-
-    async function asignarRol(miembroId, rol) {
-        const response = await fetch(`/api/projects/${projectId}/members/${miembroId}/role`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': token
-            },
-            body: JSON.stringify({ role: rol })
-        });
-
-        const resultado = await response.json();
-        if (response.ok) {
-            alert('Rol actualizado');
-            location.reload();
-        } else {
-            alert(resultado.mensaje || 'Error al actualizar rol');
-        }
-    }
-
-    const modal = document.getElementById('deadlineModal');
-    const span = document.getElementsByClassName('close')[0];
-    const saveDeadlineBtn = document.getElementById('saveDeadlineBtn');
-    const deadlineInput = document.getElementById('deadline');
-
-    plazBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        modal.style.display = 'block';
-    });
-
-    span.onclick = function() {
-        modal.style.display = 'none';
-    };
-
-    window.onclick = function(event) {
-        if (event.target == modal) {
-            modal.style.display = 'none';
-        }
-    };
-
-    saveDeadlineBtn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        const deadline = deadlineInput.value;
-        if (!deadline) {
-            alert('Por favor, selecciona una fecha.');
+        if (!response.ok) {
+            alert('Error al eliminar el proyecto');
             return;
         }
+        alert('Proyecto eliminado exitosamente');
+        window.location.href = '/dashboard';
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al eliminar el proyecto');
+    }
+}
 
-        try {
-            const response = await fetch(`/api/projects/${projectId}/deadline`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': token
-                },
-                body: JSON.stringify({ deadline })
-            });
+function parseJwt(token) {
+    try {
+        const base64Payload = token.split('.')[1];
+        const payload = atob(base64Payload);
+        return JSON.parse(payload);
+    } catch (e) {
+        return null;
+    }
+}
 
-            if (!response.ok) {
-                alert('Error al guardar la fecha límite');
-                return;
-            }
-
-            alert('Fecha límite guardada con éxito');
-            modal.style.display = 'none';
-        } catch (error) {
-            console.error('Error al guardar la fecha límite:', error);
-            alert('Error al guardar la fecha límite');
-        }
-    });
+document.querySelector(".overlay").addEventListener("click", () => {
+    closeAddSprintModal();
+    closeUserStoryModal();
+    closeMembersModal();
+    closeNotificationsModal();
 });

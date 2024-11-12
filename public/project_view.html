@@ -1,61 +1,87 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Vista del Proyecto</title>
+  <title>Proyecto - Sprint View</title>
+  <link rel="stylesheet" href="/css/dashboard.css">
   <link rel="stylesheet" href="/css/project_view.css">
-  <link rel="stylesheet" href="/css/navindex.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-<header>
-  <nav>
-    <ul id="menulista">
-      <li><a href="dashboard.html">Dashboard</a></li>
-      <li><a href="#">Información</a></li>
-      <li><a href="#" id="miembrosBtnHeader">Miembros</a></li>
-      <li><a href="#">Ajustes</a></li>
-    </ul>
-  </nav>
-</header>
-
 <div class="container">
-  <a href="#" id="backBtn" class="back-btn"><i class="fas fa-arrow-left"></i> Regresar</a>
-  <div class="project-header">
-    <h1 id="projectTitle"></h1>
-    <p id="projectDescription"></p>
-  </div>
-  <div class="project-menu" id="projectMenu">
-    <ul>
-      <li><a href="#" id="addSprintBtn"><i class="fas fa-plus"></i> Añadir Sprint</a></li>
-      <li><a href="/kanban.html" id="kanbanBtn"><i class="fas fa-columns"></i> Ver Kanban</a></li>
-      <li><a href="#" id="sprintsBtn"><i class="fas fa-running"></i> Ver Sprints</a></li>
-      <li><a href="#" id="reportsBtn"><i class="fas fa-chart-line"></i> Ver Reportes</a></li>
-      <li><a href="#" id="miembrosBtn"><i class="fas fa-users"></i> Miembros</a></li>
-      <li><a href="#" id="plazBtn"><i class="fas fa-chart-line"></i> Plazo</a></li>
-    </ul>
-    <div id="deadlineModal" class="modal">
-      <div class="modal-content">
-        <span class="close">&times;</span>
-        <h2>Set Project Deadline</h2>
-        <label for="deadline">Select Deadline:</label>
-        <input type="date" id="deadline" name="deadline">
-        <button id="saveDeadlineBtn">Save</button>
-      </div>
+  <aside class="sidebar">
+    <button class="add-btn" onclick="openAddSprintModal()"><i class="fas fa-plus"></i></button>
+    <nav>
+      <ul>
+        <li><button onclick="openMembersModal()"><i class="fas fa-users"></i></button></li>
+        <li><button onclick="toggleNotifications()" id="notificationBtn"><i class="fas fa-bell"></i><span id="notificationCount" class="notification-count"></span></button></li>
+        <li><button onclick="goBack()"><i class="fas fa-arrow-left"></i></button></li>
+        <li id="deleteProjectBtn" style="display: none;"><button onclick="confirmDeleteProject()"><i class="fas fa-trash"></i></button></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <main>
+    <header>
+      <h1 id="projectName">Proyecto Scrum</h1>
+    </header>
+
+    <div class="sprints">
+      <!-- Sprints will be rendered here -->
     </div>
+  </main>
+</div>
 
+<div class="overlay"></div>
+
+<!-- Add Sprint Modal -->
+<div class="modal" id="addSprintModal">
+  <h2>Agregar Sprint</h2>
+  <input type="text" id="sprint-name" placeholder="Nombre del Sprint">
+  <input type="date" id="sprint-start-date" placeholder="Fecha de inicio">
+  <input type="date" id="sprint-end-date" placeholder="Fecha de fin">
+  <button onclick="addNewSprint()">Agregar</button>
+</div>
+
+<!-- Add User Story Modal -->
+<div class="modal" id="addUserStoryModal">
+  <h2>User Story</h2>
+  <input type="text" id="user-story-title" placeholder="Título de la User Story">
+  <textarea id="user-story-description" placeholder="Descripción"></textarea>
+  <select id="user-story-priority">
+    <option value="alta">Alta</option>
+    <option value="media">Media</option>
+    <option value="baja">Baja</option>
+  </select>
+  <div>
+    <label for="user-story-assignees">Asignar a:</label>
+    <select id="user-story-assignees" multiple>
+      <!-- Project members will be populated here -->
+    </select>
   </div>
+  <button onclick="saveUserStory()">Guardar</button>
+</div>
 
-  <div id="miembrosSection" class="miembros-section" style="display: none;">
-    <button id="volverMenuBtn" class="back-to-menu-btn"><i class="fas fa-arrow-left"></i> Regresar al Menú</button>
+<!-- Members Modal -->
+<div class="modal" id="membersModal">
+  <div class="modal-content">
+    <span class="close" onclick="closeMembersModal()">&times;</span>
     <h2>Miembros del Proyecto</h2>
-    <ul id="miembrosList" class="miembros-list"></ul>
+    <ul id="miembrosList"></ul>
     <div class="invitar-miembro">
       <h3>Invitar Miembro</h3>
       <input type="email" id="emailInvitar" placeholder="Correo del miembro">
       <button id="invitarBtn">Invitar</button>
     </div>
+  </div>
+</div>
+
+<!-- Notifications Modal -->
+<div class="modal" id="notificationsModal">
+  <div class="modal-content">
+    <span class="close" onclick="closeNotificationsModal()">&times;</span>
+    <h2>Notificaciones</h2>
+    <ul id="notificationsList"></ul>
   </div>
 </div>
 
