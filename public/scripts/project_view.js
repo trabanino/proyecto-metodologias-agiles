@@ -64,12 +64,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = `/sprint_view.html?projectId=${projectId}`;
     });
 
-    reportsBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        // navegar a la página de reportes
-        alert('PENDIENTE: ver reportes no implementada todavía');
-    });
-
     kanbanBtn.addEventListener('click', (e) => {
         e.preventDefault();
         // navegar a la página de Kanban con el ID del proyecto
